@@ -14,8 +14,12 @@
 #include "ImgIO.h"
 #include "Gap8.h"
 
+#ifndef Max
 #define Max(a, b)               (((a)>(b))?(a):(b))
+#endif
+#ifndef Min
 #define Min(a, b)               (((a)<(b))?(a):(b))
+#endif
 
 #define ALIGN(Value, Size)      (((Value)&((1<<(Size))-1))?((((Value)>>(Size))+1)<<(Size)):(Value))
 
