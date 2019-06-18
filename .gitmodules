@@ -34,3 +34,6 @@
 [submodule "pulp-os/pulp-rt"]
 	path = pulp-os/pulp-rt
 	url = https://github.com/pulp-platform/pulp-rt.git
+[submodule "PMSIS"]
+	path = PMSIS
+	url = https://github.com/GreenWaves-Technologies/PMSIS.git
