@@ -5,20 +5,19 @@ AR            = riscv32-unknown-elf-ar
 OBJDUMP       = riscv32-unknown-elf-objdump
 
 platform     ?= gapuino
-vcd          ?= ""
-_vcd         ?=
-trace	     ?= ""
-_trace       ?=
-config       ?= ""
-_config      ?=
 
 # The linker options.
 LIBS          += -L$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs  \
+		-L$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/libgomp  \
 		-L$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/newlib
-LIBSFLAGS     += -nostartfiles -lgcc -lc -lm
+LIBSFLAGS     += -nostartfiles -lgcc -lc -lm -lgomp
 
 ifndef chip
+ifeq ($(TARGET_CHIP), GAP9)
+chip=GAP9
+else
 chip=GAP8
+endif
 endif
 
 # The options used in linking as well as in any direct use of ld.
@@ -32,7 +31,7 @@ LDFLAGS       = -T$(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_$(chip)/device/
 ifeq ($(chip), GAP8)
 RISCV_FLAGS   = -march=rv32imcxgap8 -mPE=8 -mFC=1 -D__$(chip)__  -D__RISCV_ARCH_GAP__=1
 else
-RISCV_FLAGS   = -march=rv32imcxpulpv2 -mPE=8 -mFC=1 -D__$(chip)__ -D__RISCV_ARCH_GAP__=1
+RISCV_FLAGS   = -march=rv32imcxgap9 -mPE=8 -mFC=1 -mfdiv -D__$(chip)__ -D__RISCV_ARCH_GAP__=1
 endif
 
 DEVICE_FLAGS  = -DDEVICE_SPI_ASYNCH=1 -DDEVICE_SPI=1 \
@@ -41,7 +40,7 @@ DEVICE_FLAGS  = -DDEVICE_SPI_ASYNCH=1 -DDEVICE_SPI=1 \
 		-DDEVICE_STDIO_MESSAGES=1 -DDEVICE_SLEEP=1 \
 		-DDEVICE_PORTIN=1 -DDEVICE_PORTOUT=1 -DDEVICE_PORTINOUT=1 \
 		-DDEVICE_I2C=1 -DDEVICE_I2C_ASYNCH=1 -DDEVICE_I2S=1 -DDEVICE_RTC=1 \
-		-DDEVICE_INTERRUPTIN=1 -DDEVICE_PWMOUT=1 -DDEVICE_QSPI=1
+		-DDEVICE_INTERRUPTIN=1 -DDEVICE_PWMOUT=1 -DDEVICE_QSPI=1 -DDEVICE_USTICKER=1
 
 
 
@@ -60,7 +59,7 @@ export PULP_CURRENT_CONFIG_ARGS += $(CONFIG_OPT)
 MBED_FLAGS     += -D__PLATFORM_GVSOC__
 endif
 
-ifeq ($(platform), fpga)
+ifeq ($(platform), $(filter $(platform), fpga fpga_rtl))
 MBED_FLAGS     += -D__PLATFORM_FPGA__
 endif
 
@@ -68,14 +67,31 @@ ifeq ($(platform), rtl)
 MBED_FLAGS     += -D__PLATFORM_RTL__
 endif
 
-ifdef no_printf
+ifeq ($(platform), gapuino)
+export PULP_CURRENT_CONFIG_ARGS += $(CONFIG_OPT)
+endif
+
+ifeq ($(io), disable)
 MBED_FLAGS     += -D__DISABLE_PRINTF__
-else
+endif
+
+ifeq ($(io), uart)
+MBED_FLAGS     += -DPRINTF_UART
+endif
+
+ifeq ($(io), )
 MBED_FLAGS     += -DPRINTF_RTL
 endif
 
-ifeq ($(platform), gapuino)
-export PULP_CURRENT_CONFIG_ARGS += $(CONFIG_OPT)
+ifeq ($(io), rtl)
+MBED_FLAGS     += -DPRINTF_RTL
+endif
+
+# Choose Simulator
+SIMULATOR      = vsim
+
+ifeq ($(sim), xcelium)
+SIMULATOR      = xcelium
 endif
 
 # The pre-processor and compiler options.
@@ -95,15 +111,18 @@ BIN           = $(BUILDDIR)/test
 BUILDDIR      = $(shell pwd)/BUILD/$(TARGET_CHIP)/GCC_RISCV
 
 S_OBJECTS     = $(patsubst %.S, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBED_PATH)/mbed-os -name "*.S" \
+		-not -path "$(MBED_PATH)/mbed-os/*/test/*" \
 		-not -path "$(MBED_PATH)/mbed-os/targets/TARGET_CORTEX/*" \
 		-not -path "$(MBED_PATH)/mbed-os/rtos/TARGET_CORTEX/*" \
-		-not -path "$(MBED_PATH)/mbed-os/cmsis/*" \
+		-not -path "$(MBED_PATH)/mbed-os/cmsis/TARGET_CORTEX*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/*" \
 		-not -path "$(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_*")))
 
 S_OBJECTS     += $(patsubst %.S, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_$(chip) -name "*.S")))
 
 C_OBJECTS     = $(patsubst %.c, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBED_PATH)/mbed-os -name "*.c" \
+		-not -path "$(MBED_PATH)/mbed-os/usb/*" \
+		-not -path "$(MBED_PATH)/mbed-os/cmsis/TARGET_CORTEX*" \
 		-not -path "$(MBED_PATH)/mbed-os/components/*" \
 		-not -path "$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/*" \
 		-not -path "$(MBED_PATH)/mbed-os/events/equeue/tests/*" \
@@ -114,6 +133,7 @@ C_OBJECTS     = $(patsubst %.c, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBED_
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/mbed-client-cli/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/nanostack-libservice/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/mbed-coap/*" \
+		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/TARGET_PSA/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/lorawan/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/lwipstack/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/mbedtls/*" \
@@ -148,7 +168,9 @@ T_OBJECTS_C   += $(patsubst %.c, $(BUILDDIR)/%.o, $(TEST_C))
 T_OBJECTS_CXX += $(patsubst %.cpp, $(BUILDDIR)/%.o, $(TEST_CXX))
 
 CXX_OBJECTS   = $(patsubst %.cpp, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBED_PATH)/mbed-os -name "*.cpp" \
+		-not -path "$(MBED_PATH)/mbed-os/cmsis/TARGET_CORTEX*" \
 		-not -path "$(MBED_PATH)/mbed-os/tools/*" \
+		-not -path "$(MBED_PATH)/mbed-os/usb/*" \
 		-not -path "$(MBED_PATH)/mbed-os/components/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/FEATURE_BLE/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/mbed-client-randlib/*" \
@@ -156,6 +178,7 @@ CXX_OBJECTS   = $(patsubst %.cpp, $(BUILDDIR)/%.o, $(wildcard $(shell find $(MBE
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/mbed-client-cli/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/nanostack-libservice/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/mbed-coap/*" \
+		-not -path "$(MBED_PATH)/mbed-os/features/frameworks/TARGET_PSA/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/lorawan/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/mbedtls/*" \
 		-not -path "$(MBED_PATH)/mbed-os/features/lwipstack/*" \
@@ -200,6 +223,8 @@ INC           += $(GAP_SDK_HOME)/tools/libs $(MBED_PATH)/mbed-os/ $(MBED_PATH)/m
 		$(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_$(chip)/device/ \
 		$(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_$(chip)/driver/ $(MBED_PATH)/mbed-os/targets/TARGET_GWT/TARGET_$(chip)/pins/ \
 		$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/newlib/extra/stdio/tinyprintf/ \
+		$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/libgomp/src/ \
+		$(MBED_PATH)/mbed-os/targets/TARGET_GWT/libs/libgomp/src/config/pulp/ \
 		$(MBED_PATH)/mbed-os/events/ $(MBED_PATH)/mbed-os/events/equeue/ \
 		$(MBED_PATH)/mbed-os/drivers $(MBED_PATH)/mbed-os/features \
 		$(MBED_PATH)/mbed-os/features/storage $(MBED_PATH)/mbed-os/features/storage/blockdevice \
@@ -257,57 +282,47 @@ $(BIN): $(OBJECTS)
 	@$(CC) $(RISCV_FLAGS) -MMD -MP $(WRAP_FLAGS) -o $@ $(OBJECTS) $(LIBS) $(LDFLAGS) $(LIBSFLAGS) $(INC_DEFINE)
 
 ifeq ($(platform), gvsoc)
-run::
-ifneq ($(vcd), "")
-_vcd=-vcd
-endif
-
-ifneq ($(trace), "")
-_trace=-trace $(trace)
-endif
-
-ifneq ($(config), "")
-_config=-config ${CURDIR}/$(config)
-endif
 
 run::
-	$(INSTALL_DIR)/runner/run_gvsoc.sh $(_config) $(_vcd) $(_trace)
+	gvsoc --config=$(GVSOC_CONFIG) --dir=$(BUILDDIR) --binary $(BIN) $(runner_args) prepare run
 
-else ifeq ($(platform), rtl)
+else ifeq ($(platform), $(filter $(platform), rtl fpga_rtl))
 run:: dir
-	@ln -sf $(VSIM_PATH)/work $(BUILDDIR)/work
-	@ln -sf $(VSIM_PATH)/modelsim.ini $(BUILDDIR)/modelsim.ini
-	@ln -sf $(VSIM_PATH)/tcl_files $(BUILDDIR)/tcl_files
-	@ln -sf $(VSIM_PATH)/boot $(BUILDDIR)/boot
-	@ln -sf $(VSIM_PATH)/../tb/models $(BUILDDIR)/models
-	cd $(BUILDDIR) && $(MBED_PATH)/tools/runner/run_rtl.sh $(recordWlf) $(vsimDo) $(vsimPadMuxMode) $(vsimBootTypeMode) $(load) $(PLPBRIDGE_FLAGS) -a $(chip)
+	cd $(BUILDDIR) && $(GAP_SDK_HOME)/tools/runner/run_rtl.sh $(SIMULATOR) $(recordWlf) $(vsimDo) $(vsimPadMuxMode) $(vsimBootTypeMode) $(load) $(PLPBRIDGE_FLAGS) -a $(chip)
 else
 run:: all
-	$(MBED_PATH)/tools/runner/run_gapuino.sh $(PLPBRIDGE_FLAGS)
+ifeq ($(chip), GAP8)
+	$(GAP_SDK_HOME)/tools/runner/run_gapuino.sh $(PLPBRIDGE_FLAGS)
+else ifeq ($(chip), GAP9)
+	$(GAP_SDK_HOME)/tools/runner/run_gap9.sh $(PLPBRIDGE_FLAGS) -ftdi
+endif
 
 gdbserver: PLPBRIDGE_FLAGS += -gdb
 gdbserver: run
-
 endif
-gui:: dir
-	@ln -sf $(VSIM_PATH)/work $(BUILDDIR)/work
-	@ln -sf $(VSIM_PATH)/modelsim.ini $(BUILDDIR)/modelsim.ini
-	@ln -sf $(VSIM_PATH)/tcl_files $(BUILDDIR)/tcl_files
-	@ln -sf $(VSIM_PATH)/boot $(BUILDDIR)/boot
-	@ln -sf $(VSIM_PATH)/../tb/models $(BUILDDIR)/models
-	cd $(BUILDDIR) && $(MBED_PATH)/tools/runner/run_rtl.sh $(recordWlf) $(vsimDo) $(vsimPadMuxMode) $(vsimBootTypeMode) "GUI" $(load) $(PLPBRIDGE_FLAGS) -a $(chip)
 
+gui:: dir
+	cd $(BUILDDIR) && $(GAP_SDK_HOME)/tools/runner/run_rtl.sh $(SIMULATOR) -a $(chip) $(recordWlf) $(vsimDo) $(vsimPadMuxMode) $(vsimsdf) $(vsimBootTypeMode) "GUI" $(load) $(PLPBRIDGE_FLAGS)
+
+# Foramt "vsim -do xxx.do xxx.wlf"
 debug:
 	@vsim -view $(BUILDDIR)/vsim.wlf "$(vsimDo)"
+
+# Foramt "simvision -input xxx.svcf xxx.trn"
+debug_xcelium:
+	@simvision "$(vsimDo)" $(BUILDDIR)/waves.shm/waves.trn
 
 $(BUILDDIR)/test.s: $(BUILDDIR)/test
 	$(OBJDUMP) -D $< > $@
 
 disdump: $(BUILDDIR)/test.s
 
+version:
+	@$(GAP_SDK_HOME)/tools/version/record_version.sh
 
 clean::
 	@rm -rf $(OBJECTS) $(PROGRAM)
 	@rm -rf ./BUILD transcript *.wav __pycache__
+	@rm -rf version.log
 
 .PHONY: gui debug disdump clean gdbserver run all dir

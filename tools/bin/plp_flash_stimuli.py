@@ -23,6 +23,12 @@ def dumpByteToSlm(file, addr, value):
 def dumpShortToSlm(file, addr, value):
     file.write("@%08X %04X\n" % (addr, value))
 
+def dumpWordToSlm(file, addr, value):
+    file.write("@%08X %08X\n" % (addr, value))
+
+def dumpLongToSlm(file, addr, value):
+    file.write("@%08X %016X\n" % (addr, value))
+
 def dump_word( filetoprint, addr, data_s):
     for i in xrange(0,4,1):
         filetoprint.write("@%08X %s\n" % ( addr+i,  data_s[i*2:(i+1)*2] ))
@@ -109,25 +115,66 @@ class FlashImage(object):
         for i in range(0, padsize):
             self.buff.append(0)
 
-    def __pad(self, padsize):
-        self.flashOffset += padsize
-        for i in range(0, padsize):
-            self.buff.append(0)
+    def __pad(self, padsize, buff=None):
+        if buff is None:
+            self.flashOffset += padsize
+            for i in range(0, padsize):
+                self.buff.append(0)
+        else:
+            for i in range(0, padsize):
+                buff = self.__appendByte(0, buff=buff)
+            return buff
 
-    def __appendInt(self, value, newBlock=False):
-        #if newBlock: self.__roundToNextBlock()
-        self.buff += struct.pack("I", value)
-        self.flashOffset += 4
+    def __appendInt(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("I", value)
+            self.flashOffset += 4
+        else:
+            buff += struct.pack("I", value)
+            return buff
 
-    def __appendByte(self, value, newBlock=False):
-        #if newBlock: self.__roundToNextBlock()
-        self.buff += struct.pack("B", value)
-        self.flashOffset += 1
+    def __appendLongInt(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("Q", value)
+            self.flashOffset += 8
+        else:
+            buff += struct.pack("Q", value)
+            return buff
+
+    def __appendByte(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("B", value)
+            self.flashOffset += 1
+        else:
+            buff += struct.pack("B", value)
+            return buff
+
+
+    def get_crc(self, buff):
+        crc = 0xffffffff
+        for data in buff:
+            crc = crc ^ data
+            for i in range(7, -1, -1):
+                if crc & 1 == 1:
+                    mask = 0xffffffff
+                else:
+                    mask = 0
+                crc2 = crc >> 1
+                crc = (crc >> 1) ^ (0xEDB88320 & mask)
+
+        return (crc ^ 0xffffffff)
+
 
     def __appendBuffer(self, buffer, newBlock=False, pad=False, encrypt=False, padToOffset=None):
         #if newBlock: self.__roundToNextBlock()
         if self.encrypt:
             cmd = 'aes_encode %s %s' % (self.aesKey, self.aesIv)
+
+            crc = self.get_crc(buffer)
+            buffer += struct.pack("I", crc)
 
             p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             out, err = p.communicate(buffer)
@@ -135,10 +182,13 @@ class FlashImage(object):
                 raise Exception('Error when executing aes_encore to encrypt binary, probably this tool is not available')
             buffer = out
 
-        if padToOffset != None: self.__pad(padToOffset - self.flashOffset)
+        if padToOffset != None:
+            self.__pad(padToOffset - self.flashOffset)
+
         self.buff += buffer
         self.flashOffset += len(buffer)
-        if pad: self.__padBlock(len(buffer))
+        if pad:
+            self.__padBlock(len(buffer))
 
 
 
@@ -210,9 +260,16 @@ class FlashImage(object):
 
         # First compute areas flash information
         flashOffset = 0
-        flashOffset += 4 + 4 + 4 + 4 + len(self.bootBinary.segments) * 4 * 4
+        flashOffset += 4 + 4 + 4 + 4 + 16 * 4 * len(self.bootBinary.segments)
+
+        crc_offset = flashOffset
+        flashOffset += 4
 
         flashOffset = (flashOffset + self.blockSize - 1) & ~(self.blockSize - 1)
+
+        if self.encrypt:
+            for segment in self.bootBinary.segments:
+                segment.size += 4
 
         index = 0
         for segment in self.bootBinary.segments:
@@ -223,19 +280,30 @@ class FlashImage(object):
             index += 1
 
 
+
         # Then write the header containing memory areas declaration
+        flashOffset = (flashOffset + 7) & ~7
         self.fsOffset = flashOffset
-        self.__appendInt(flashOffset)
-        self.__appendInt(len(self.bootBinary.segments))
+
+        header_buff = bytes([])
+        header_buff = self.__appendInt(flashOffset, buff=header_buff)
+        header_buff = self.__appendInt(len(self.bootBinary.segments), buff=header_buff)
         #self.__appendInt(self.bootBinary.entry)
-        self.__appendInt(self.bootBinary.entry)
-        self.__appendInt(self.bootaddr)
+        header_buff = self.__appendInt(self.bootBinary.entry, buff=header_buff)
+        header_buff = self.__appendInt(self.bootaddr, buff=header_buff)
 
         for area in self.bootBinary.segments:
-            self.__appendInt(area.offset)
-            self.__appendInt(area.base)
-            self.__appendInt(area.size)
-            self.__appendInt(area.nbBlocks)
+            header_buff = self.__appendInt(area.offset, buff=header_buff)
+            header_buff = self.__appendInt(area.base, buff=header_buff)
+            header_buff = self.__appendInt(area.size, buff=header_buff)
+            header_buff = self.__appendInt(area.nbBlocks, buff=header_buff)
+
+        header_buff = self.__pad(crc_offset - self.flashOffset - len(header_buff), buff=header_buff)
+        crc = self.get_crc(header_buff)
+        header_buff = self.__appendInt(crc, buff=header_buff)
+        self.__appendBuffer(header_buff, encrypt=self.encrypt)
+
+
 
         # Finally write the data
         for area in self.bootBinary.segments:
@@ -253,7 +321,7 @@ class FlashImage(object):
 
         else:
             # In case no boot binary is there, we must have at least the first word telling where starts the next descriptor
-            self.__appendInt(4)
+            self.__appendLongInt(8)
 
 
     def __dumpCompsToBuff(self):
@@ -268,7 +336,7 @@ class FlashImage(object):
         headerSize = 0
         
         # Compute the header size
-        headerSize += 8    # Header size and number of components
+        headerSize += 12    # Header size and number of components
         
         for comp in self.compList:
             headerSize += 12                # Flash address, size and path length
@@ -278,10 +346,7 @@ class FlashImage(object):
         
         # Now set the flash address for each component
         for comp in self.compList:
-            if comp.name == 'littlefs.image':
-                comp.flashAddr = 256*1024
-            else:
-                comp.flashAddr = (flashAddr + 3) & ~3
+            comp.flashAddr = (flashAddr + 3) & ~3
             if self. verbose:
                 print ('  Adding component (name: %s, flashOffset: 0x%x)' % (comp.name, comp.flashAddr))
             flashAddr = comp.flashAddr + comp.size
@@ -290,7 +355,7 @@ class FlashImage(object):
         # Now create the raw image as a byte array
         
         # First header size
-        self.__appendInt(headerSize)
+        self.__appendLongInt(headerSize)
         
         # Number of components
         self.__appendInt(len(self.compList))
@@ -322,12 +387,30 @@ class FlashImage(object):
         self.__dumpToBuff()
 
         if self.raw != None:
+            try:
+                os.makedirs(os.path.dirname(self.raw))
+            except:
+                pass
+
             with open(self.raw, 'wb') as file:
-                file.write(self.buff)
+                file.write(bytes(self.buff))
 
         if self.stimuli != None:
+
+            try:
+                os.makedirs(os.path.dirname(self.stimuli))
+            except:
+                pass
+
             with open(self.stimuli, 'w') as file:
-                if self.flashType == 'hyper':
+                if self.flashType == 'mram':
+                    last_bytes = len(self.buff) & 0x7
+                    for i in range(0, 8 - last_bytes):
+                        self.__appendByte(0)
+                    for i in range(0, len(self.buff)>>3):
+                        value = (self.buff[i*8+7] << 56) + (self.buff[i*8+6] << 48) + (self.buff[i*8+5] << 40) + (self.buff[i*8+4] << 32) + (self.buff[i*8+3] << 24) + (self.buff[i*8+2] << 16) + (self.buff[i*8+1] << 8) + self.buff[i*8]
+                        dumpLongToSlm(file, i, value)
+                elif self.flashType == 'hyper':
                     if len(self.buff) & 1 != 0:
                         self.__appendByte(0)
                     for i in range(0, len(self.buff)>>1):
@@ -347,9 +430,9 @@ class FlashImage(object):
                         dumpByteToSlm(file, i, self.buff[i])
 
 
-def genFlashImage(slmStim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
+def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
     if bootBinary != None or len(comps) != 0:
-        if slmStim != None:
+        if slmStim != None or raw_stim is not None:
             compsList = ''
             romBoot = ''
 
@@ -359,7 +442,10 @@ def genFlashImage(slmStim=None, bootBinary=None, comps=[], verbose=False, archi=
             for comp in comps:
                 compsList += ' --comp=%s' % comp
     
-            cmd = "plp_mkflash %s %s --stimuli=%s --flash-type=%s" % (romBoot, compsList, slmStim, flashType)
+            if slmStim is not None:
+                cmd = "plp_mkflash %s %s --stimuli=%s --flash-type=%s" % (romBoot, compsList, slmStim, flashType)
+            else:
+                cmd = "plp_mkflash %s %s --raw=%s --flash-type=%s" % (romBoot, compsList, raw_stim, flashType)
 
             if qpi: cmd+= ' --qpi'
 
