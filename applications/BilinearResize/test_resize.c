@@ -1,10 +1,17 @@
 /*
- * Copyright (C) 2017 GreenWaves Technologies
- * All rights reserved.
+ * Copyright 2019 GreenWaves Technologies, SAS
  *
- * This software may be modified and distributed under the terms
- * of the BSD license.  See the LICENSE file for details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /* PMSIS includes. */
@@ -166,26 +173,26 @@ static int32_t open_camera_himax(struct pi_device *device)
 
 static int32_t open_camera_mt9v034(struct pi_device *device)
 {
-    struct mt9v034_conf cam_conf;
+    struct pi_mt9v034_conf cam_conf;
 
-    mt9v034_conf_init(&cam_conf);
-    cam_conf.format = CAMERA_QVGA;
+    pi_mt9v034_conf_init(&cam_conf);
+    cam_conf.format = PI_CAMERA_QVGA;
     pi_open_from_conf(device, &cam_conf);
-    if (camera_open(device))
+    if (pi_camera_open(device))
     {
         return -1;
     }
     uint16_t val = MT9V034_BLACK_LEVEL_AUTO;
-    camera_reg_set(device, MT9V034_BLACK_LEVEL_CTRL, &val);
+    pi_camera_reg_set(device, MT9V034_BLACK_LEVEL_CTRL, &val);
     val = MT9V034_AEC_ENABLE_A|MT9V034_AGC_ENABLE_A;
-    camera_reg_set(device, MT9V034_AEC_AGC_ENABLE, &val);
+    pi_camera_reg_set(device, MT9V034_AEC_AGC_ENABLE, &val);
 
     //max exposure def:0x01E0
     val = 0x0FE0;
-    camera_reg_set(device, 0xAD, &val);
+    pi_camera_reg_set(device, 0xAD, &val);
     //Max Analog Gain def: 0x0040
     val = 0x0F40;
-    camera_reg_set(device, 0xAB, &val);
+    pi_camera_reg_set(device, 0xAB, &val);
 
     return 0;
 }
@@ -263,12 +270,6 @@ void test_cam(void)
     }
     #endif  /* HAVE_CAMERA */
 
-    #if defined(USE_BRIDGE) || defined(HAVE_BRIDGE)
-    BRIDGE_Init();
-    BRIDGE_Connect(0, NULL);
-    printf("Connection to bridge done\n");
-    #endif  /* USE_BRIDGE || HAVE_BRIDGE */
-
     #if defined(HAVE_BRIDGE)
     char name[] = "../../../imgTest0.pgm";
     uint32_t w_in = 0, h_in = 0;
@@ -340,7 +341,7 @@ void test_cam(void)
         #endif  /* HAVE_CAMERA */
 
         #if defined(HAVE_DISPLAY)
-        pi_display_write(&display, &ImageInBuffer, 0, 0, CAMERA_WIDTH, CAMERA_HEIGHT);
+        pi_display_write(&display, &ImageInBuffer, 0, 0, IMG_WIDTH, IMG_HEIGHT);
         #endif  /* HAVE_DISPLAY */
 
         #if defined(USE_AUTOTILER)
@@ -370,9 +371,6 @@ void test_cam(void)
         index++;
         #endif  /* USE_BRIDGE */
     }
-    #if defined(USE_AUTOTILER)
-    pi_cluster_close(&cluster_dev);
-    #endif  /* USE_AUTOTILER */
 
     #if defined(USE_BRIDGE)
     BRIDGE_Disconnect(NULL);

@@ -81,11 +81,11 @@
    Fll SoC:         Frequency:      Value in Hz
    Fll Cluster:     Frequency:      Value in Hz
 */
-typedef enum _pmu_fll_cluster_down {
-  uPMU_FLL_FAST_WAKEUP=0,    /* Fll is kept active and ready to be used */
-  uPMU_FLL_RETENTIVE=1,      /* Fll is stopped and it's state is kept in retention */
-  uPMU_FLL_SHUTDOWN=2        /* Fll is stopped and has to be re initialized when restarting */
-} pmu_fll_cluster_down_t;
+// typedef enum _pmu_fll_cluster_down {
+//   uPMU_FLL_FAST_WAKEUP=0,    /* Fll is kept active and ready to be used */
+//   uPMU_FLL_RETENTIVE=1,      /* Fll is stopped and it's state is kept in retention */
+//   uPMU_FLL_SHUTDOWN=2        /* Fll is stopped and has to be re initialized when restarting */
+// } pmu_fll_cluster_down_t;
 
 
 /* Maestro internal events */

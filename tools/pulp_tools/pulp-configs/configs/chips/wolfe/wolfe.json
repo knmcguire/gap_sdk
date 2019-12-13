@@ -23,8 +23,12 @@
         "includes": ["devices/uart_tb.json"],
         "interface": "uart0"
       },
-      "hyper": {
-        "includes": ["devices/hyper.json"],
+      "flash": {
+        "include" : "devices/hyperflash.json",
+        "cs": 1
+      },
+      "ram": {
+        "include" : "devices/hyperram.json",
         "cs": 0
       },
       "jtag_proxy": {
@@ -70,6 +74,14 @@
       "base": "0x10000000",
       "size": "0x00010000",
       "banking_factor": 2
+    },
+
+    "icache": {
+      "config": {
+        "nb_sets_bits": 6,
+        "nb_ways_bits": 2,
+        "line_size_bits": 4
+      }
     },
 
     "peripherals": {

@@ -1067,6 +1067,10 @@ def gen_gtkw_files(config, gv_config):
                             with gtkw.group('pe_%d' % i, closed=True):
                                 gen_gtkw_core_traces(gtkw, tp, 'sys.board.chip.cluster.pe%d' % i)
 
+                        with gtkw.group('icache', closed=True):
+                            check_user_traces(gtkw, tp, 'chip.cluster.icache', user_traces)
+                            gen_gtkw_icache_traces(gtkw, tp, 'sys.board.chip.cluster.icache', 1<<config.get_int('**/cluster/icache/nb_ways_bits'), 1<<config.get_int('**/cluster/icache/nb_sets_bits'))
+
 
         print ()
         print ('A Gtkwave script has been generated and can be opened with the following command:')
@@ -1092,6 +1096,8 @@ class Runner(Platform):
         parser = config.getParser()
 
         parser.add_argument("--no-debug-syms", dest="debug_syms", action="store_false", help="Deactivate debug symbol parsing, which can then be used for traces")
+
+        parser.add_argument("--trace-enable", dest="trace", action="store_true", help="Activate GVSOC traces")
 
         parser.add_argument("--trace", dest="traces", default=[], action="append", help="Specify gvsoc trace")
 
@@ -1131,6 +1137,9 @@ class Runner(Platform):
 
         if args.trace_level is not None:
             self.get_json().set('gvsoc/trace-level', args.trace_level)
+
+        if args.trace is not None:
+            self.get_json().set('gvsoc/trace-enable', args.trace)
 
         for event in args.events:
             self.get_json().set('gvsoc/event', event)
@@ -1238,6 +1247,7 @@ class Runner(Platform):
                     raise Exception('Error while generating debug symbols information, make sure the toolchain and the binaries are accessible ')
 
         comps = []
+        raw_fs = self.get_json().get_str('**/flash/raw_fs')
         comps_conf = self.get_json().get('**/flash/fs/files')
         if comps_conf is not None:
             comps = comps_conf.get_dict()
@@ -1265,6 +1275,7 @@ class Runner(Platform):
                 raw_stim=self.get_flash_preload_file(),
                 bootBinary=binary,
                 comps=comps,
+                raw_fs=raw_fs,
                 verbose=self.get_json().get('**/runner/verbose').get(),
                 archi=self.get_json().get('**/pulp_chip_family').get(),
                 flashType=self.get_json().get('**/runner/flash_type').get(),
@@ -1365,7 +1376,7 @@ class Runner(Platform):
 
         gen_gtkw_files(self.get_json(), gvsoc_config)
 
-        debug_mode = gvsoc_config.get_bool('vcd/active') or len(gvsoc_config.get('trace').get()) != 0 or len(gvsoc_config.get('event').get()) != 0
+        debug_mode = gvsoc_config.get_bool('trace-enable') or gvsoc_config.get_bool('vcd/active') or len(gvsoc_config.get('trace').get()) != 0 or len(gvsoc_config.get('event').get()) != 0
 
         power_engine = vp.power_engine.component(name=None, config=gvsoc_config, debug=debug_mode)
 

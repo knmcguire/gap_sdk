@@ -82,7 +82,7 @@ static void AT_KerParTileClear(AT_KerTileClear_T *Arg)
        		for (unsigned int i=First; i<Last; i++) {
 			char *Base = (In + i*W*H*Size + (W-Pad)*Size);
 			for (unsigned j=0; j<H; j++)
-				for (unsigned k=0; k<ClrSize; k++) Base[W*j + k] = 0;
+				for (unsigned k=0; k<ClrSize; k++) Base[W*Size*j + k] = 0;
 		}
 	}
 	gap_waitbarrier(0);
@@ -112,7 +112,7 @@ static void AT_KerTileClear(AT_KerTileClear_T *Arg)
 		char *Base = (In + (W-Pad)*Size);
 		int ClrSize = Pad*Size;
        		for (unsigned int i=First; i<Last; i++) 
-			for (unsigned k=0; k<ClrSize; k++) Base[W*i + k] = 0;
+			for (unsigned k=0; k<ClrSize; k++) Base[W*Size*i + k] = 0;
 	}
 	gap_waitbarrier(0);
 }
@@ -261,7 +261,7 @@ static void __attribute__ ((noinline)) KerConv2x1from3x1StrideNx1_V_fps(
 		int Acc = *PtOut<<Norm;
 		V0 = *PtIn; V1 = *(PtIn+1); PtIn += W;
 		Acc += V0*C0; Acc += V1*C1;
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7); PtOut+=Wo;
 	}
 }
 
@@ -289,7 +289,7 @@ static void __attribute__ ((noinline)) KerConv1x2from1x3Stride1xN_H_fps(
 		int Acc = *PtOut<<Norm;
 		V0 = *(PtIn+0*W+0); V1 = *(PtIn+1*W+0); PtIn++;
 		Acc += V0*C0; Acc += V1*C1;
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -326,7 +326,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride1_V_fps(
 		int Acc = *PtOut<<Norm;
 		V2 = *((v4s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7); PtOut+=Wo;
 		V0 = V1; V1 = V2;
 	}
 	if (Bottom) {
@@ -335,7 +335,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride1_V_fps(
 		V0 = *((v4s *) PtIn); PtIn += W;
 		V1 = *((v4s *) PtIn);;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7);
 	}
 }
 
@@ -370,7 +370,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride2_V_fps(
 		int Acc = *PtOut<<Norm;
 		V1 = *((v4s *) PtIn); PtIn += W; V2 = *((v4s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7); PtOut+=Wo;
 		V0 = V2;
 	}
 	if (Bottom) {
@@ -379,7 +379,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride2_V_fps(
 		V0 = *((v4s *) PtIn); PtIn += W;
 		V1 = *((v4s *) PtIn);;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7);
 	}
 }
 
@@ -415,7 +415,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3StrideS_V_fps(
 		int Acc = *PtOut<<Norm;
 		V1 = *((v4s *) PtIn); PtIn += W; V2 = *((v4s *) PtIn); PtIn += (Stride-2)*W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7); PtOut+=Wo;
 		V0 = *((v4s *) PtIn); PtIn += W;
 	}
 	if (Bottom) {
@@ -424,7 +424,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3StrideS_V_fps(
 		V0 = *((v4s *) PtIn); PtIn += W;
 		V1 = *((v4s *) PtIn);;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7);
 	}
 }
 
@@ -454,7 +454,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3Stride1_H_fps(
 		int Acc = *PtOut<<Norm;
 		V0 = *((v4s *) (PtIn+0*W+0)); V1 = *((v4s *) (PtIn+1*W+0)); PtIn++;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -483,7 +483,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3Stride2_H_fps(
 		int Acc = *PtOut<<Norm;
 		V0 = *((v4s *) (PtIn+0*W+0)); V1 = *((v4s *) (PtIn+1*W+0)); PtIn+=2;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -513,7 +513,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3StrideS_H_fps(
 		int Acc = *PtOut<<Norm;
 		V0 = *((v4s *) (PtIn+0*W+0)); V1 = *((v4s *) (PtIn+1*W+0)); PtIn+=Stride;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -545,6 +545,9 @@ static void __attribute__ ((noinline)) KerConv4x1from5x1StrideNx1_V_fps(
 		case 4: // [0..4 x 0] => [0..2 x 0] PadR==2
 			C0 = *((v4s*) (Filter + 0*5+0)); C0 = (v4s)(((int)C0)<<8);
 			break;
+                case 5: // [0..4 x 0] => [0..2 x 0] PadR==2, Wo==1
+                        C0 = *((v4s*) (Filter + 0*5+0)); C0[3] = 0;
+                        break;
 	}
 	PtIn = In + (Ho_F*1-PadOrg[2])*W; PtOut = Out+Ho_F*Wo;
 	V0 = * (v4s *) PtIn; PtIn += W;
@@ -552,7 +555,7 @@ static void __attribute__ ((noinline)) KerConv4x1from5x1StrideNx1_V_fps(
 		int Acc = *PtOut<<Norm;
 		Acc = gap_sumdotp4(V0, C0, Acc);
 		V0 = * (v4s *) PtIn; PtIn += W;
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7); PtOut+=Wo;
 	}
 }
 
@@ -586,13 +589,16 @@ static void __attribute__ ((noinline)) KerConv1x4from1x5Stride1xN_H_fps(
 		case 4: // PadB == 2
 			C0 = *((v4s *) &Filter[0]); C0 = (v4s)((int)C0<<8);
 			break;
+                case 5: // PadB == 2, Ho == 1
+                        C0 = *((v4s *) &Filter[0]);  C0[3] = 0;
+                        break;
 	}
 	x0 = *(PtIn+0*W+0); x1 = *(PtIn+1*W+0); x2 = *(PtIn+2*W+0); x3 = *(PtIn+3*W+0); V0 = gap_pack4(x0,x1,x2,x3); PtIn+=1;
 	for (unsigned int i=Wo_F; i<Wo_L; i++) {
 		int Acc = *PtOut<<Norm;
 		Acc = gap_sumdotp4(V0, C0, Acc);
 		x0 = *(PtIn+0*W+0); x1 = *(PtIn+1*W+0); x2 = *(PtIn+2*W+0); x3 = *(PtIn+3*W+0); V0 = gap_pack4(x0,x1,x2,x3); PtIn+=1;
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -640,6 +646,13 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fps(
 			C3 = *((v4s*) (Filter + 3*5+0)); C3 = (v4s)(((int)C3)<<8);
 			C4 = *((v4s*) (Filter + 4*5+0)); C4 = (v4s)(((int)C4)<<8);
 			break;
+                case 5: // [0..4 x 0..4] => [0..2 x 0..4] PadR == 2, Wo==1
+                        C0 = *((v4s*) (Filter + 0*5+0)); C0[3] = 0;
+                        C1 = *((v4s*) (Filter + 1*5+0)); C1[3] = 0;
+                        C2 = *((v4s*) (Filter + 2*5+0)); C2[3] = 0;
+                        C3 = *((v4s*) (Filter + 3*5+0)); C3[3] = 0;
+                        C4 = *((v4s*) (Filter + 4*5+0)); C4[3] = 0;
+                        break;
 	}
 	if (PadT==2) {
 		PtIn = In; Ho_F = 0;
@@ -654,13 +667,19 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fps(
 		V1 = *((v4s *) PtIn); PtIn += W;
 	}
 	V2 = *((v4s *) PtIn); PtIn += W;
+	if (Ho==1) {
+		int Acc = *PtOut<<Norm;
+		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7); *PtOut = Acc;
+		return;
+	}
 	V3 = *((v4s *) PtIn); PtIn += W;
  	PtOut = Out+Ho_F*Wo;
 	for (unsigned int i=Ho_F; i<Ho_L; i++) {
 		int Acc = *PtOut<<Norm;
 		V4 = *((v4s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc; PtOut+=Wo;
 		V0 = V1; V1 = V2; V2 = V3; V3 = V4;
 	}
@@ -669,13 +688,13 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fps(
 		PtIn -= 4*W;
 		V0 = *((v4s *) PtIn); PtIn += W; V1 = *((v4s *) PtIn); PtIn += W; V2 = *((v4s *) PtIn); PtIn += W; V3 = *((v4s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc; PtOut+=Wo;
 		if (PadB==2) {
 			Acc = *PtOut<<Norm;
 			V0 = V1; V1 = V2; V2 = V3;
 			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-			*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			*PtOut =  gap_clip(AT_NORM(Acc, Norm), 7);
 		}
 	}
 }
@@ -742,7 +761,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride2_V_fps(
 		int Acc = *PtOut<<Norm;
 		V3 = *((v4s *) PtIn); PtIn += W; V4 = *((v4s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc; PtOut+=Wo;
 		V0 = V2; V1 = V3; V2 = V4;
 	}
@@ -754,7 +773,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride2_V_fps(
 		if (PadB==1) {
 			V3 = *((v4s *) PtIn); Acc = gap_sumdotp4(V3, C3, Acc);
 		}
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc;
 	}
 }
@@ -824,7 +843,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5StrideS_V_fps(
 		int Acc = *PtOut<<Norm;
 		V2 = *((v4s *) PtIn); PtIn += W; V3 = *((v4s *) PtIn); PtIn += W; V4 = *((v4s *) PtIn); PtIn += (Stride-4)*W;
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc; PtOut+=Wo;
 		V0 = *((v4s *) PtIn); PtIn += W; V1 = *((v4s *) PtIn); PtIn += W;
 	}
@@ -836,7 +855,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5StrideS_V_fps(
 		if (PadB==1) {
 			V3 = *((v4s *) PtIn); Acc = gap_sumdotp4(V3, C3, Acc);
 		}
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 		*PtOut = Acc;
 	}
 }
@@ -883,6 +902,12 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride1_H_fps(
 			C2 = *((v4s *) &Filter[1*5+0]);
 			C3 = *((v4s *) &Filter[2*5+0]); C4 = (v4s){0, Filter[0*5+4], Filter[1*5+4], Filter[2*5+4]};
 			break;
+                case 5: // PadB == 2, Ho == 1
+                        C0 = *((v4s *) &Filter[0*5+0]);
+                        C1 = *((v4s *) &Filter[1*5+0]);
+                        C2 = *((v4s *) &Filter[2*5+0]);
+                        C3 = (v4s){0,0,0,0}; C4 = (v4s){Filter[0*5+4], Filter[1*5+4], Filter[2*5+4], 0};
+                        break;
 	}
 	V0 = *((v4s *) (PtIn+0*W+0)); V1 = *((v4s *) (PtIn+1*W+0)); V2 = *((v4s *) (PtIn+2*W+0)); V3 = *((v4s *) (PtIn+3*W+0)); PtIn += 4;
 	for (unsigned int i=Wo_F; i<Wo_L; i++) {
@@ -891,7 +916,7 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride1_H_fps(
 		x0 = PtIn[0*W]; x1 = PtIn[1*W]; x2 = PtIn[2*W]; x3 = PtIn[3*W]; PtIn++;
 		V4 = gap_pack4(x0,x1,x2,x3);
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 		V0 = __builtin_shuffle(V0, (v4s)(int)V4, (v4s){1,2,3,4});
 		V1 = __builtin_shuffle(V1, (v4s)(int)V4, (v4s){1,2,3,5});
 		V2 = __builtin_shuffle(V2, (v4s)(int)V4, (v4s){1,2,3,6});
@@ -949,7 +974,7 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride2_H_fps(
 		x0 = PtIn[0*W]; x1 = PtIn[1*W]; x2 = PtIn[2*W]; x3 = PtIn[3*W]; PtIn+=(2-4);
 		V4 = gap_pack4(x0,x1,x2,x3);
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
@@ -1005,11 +1030,11 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5StrideS_H_fps(
 		x0 = PtIn[0*W]; x1 = PtIn[1*W]; x2 = PtIn[2*W]; x3 = PtIn[3*W]; PtIn+=((int)Stride-4);
 		V4 = gap_pack4(x0,x1,x2,x3);
 		Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc); Acc = gap_sumdotp4(V3, C3, Acc); Acc = gap_sumdotp4(V4, C4, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 7); PtOut++;
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
+static void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 	signed char *__restrict__ In,
 	signed char *__restrict__ Out,
 	signed char *__restrict__ Filter,
@@ -1046,7 +1071,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			ht -= Stride; hb -= Stride;
 		}
@@ -1059,7 +1084,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			hb -= Stride;
 		}
@@ -1072,7 +1097,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wl -= Stride; wr -= Stride;
 		}
@@ -1085,7 +1110,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 		       		int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wr -= Stride;
 		}
@@ -1101,7 +1126,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= Stride; wr -= Stride;
 				}
 				ht -= Stride; hb -= Stride;
@@ -1117,7 +1142,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= Stride;
 				}
 				ht -= Stride; hb -= Stride;
@@ -1135,7 +1160,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= Stride; wr -= Stride;
 				}
 				hb -= Stride;
@@ -1151,7 +1176,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= Stride;
 				}
 				hb -= Stride;
@@ -1160,7 +1185,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fps(
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
+static void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 	signed char *__restrict__ In,
 	signed char *__restrict__ Out,
 	signed char *__restrict__ Filter,
@@ -1198,7 +1223,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			ht -= StrideY; hb -= StrideY;
 		}
@@ -1211,7 +1236,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			hb -= StrideY;
 		}
@@ -1224,7 +1249,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wl -= StrideX; wr -= StrideX;
 		}
@@ -1237,7 +1262,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 		       		int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wr -= StrideX;
 		}
@@ -1253,7 +1278,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= StrideX; wr -= StrideX;
 				}
 				ht -= StrideY; hb -= StrideY;
@@ -1269,7 +1294,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= StrideX;
 				}
 				ht -= StrideY; hb -= StrideY;
@@ -1287,7 +1312,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= StrideX; wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -1303,7 +1328,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -1312,7 +1337,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fps(
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
+static void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 	signed char *__restrict__ In,
 	signed char *__restrict__ Out,
 	signed char *__restrict__ Filter,
@@ -1363,7 +1388,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			ht -= StrideY;
 		}
@@ -1377,7 +1402,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			hb -= StrideY;
 		}
@@ -1391,7 +1416,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wl -= StrideX;
 		}
@@ -1405,7 +1430,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 		       		int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 			}
 			wr -= StrideX;
 		}
@@ -1422,7 +1447,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 					int Wl_min = wla, Fh_min = hta;
 					for (unsigned int i=Fh_min; i<Fh; i++) 
 						for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= StrideX;
 				}
 				ht -= StrideY;
@@ -1439,7 +1464,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 					int Wr_max = MinCond(wra, Fw), Fh_min = hta;
 					for (unsigned int i=Fh_min; i<Fh; i++) 
 						for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= StrideX;
 				}
 				ht -= StrideY;
@@ -1458,7 +1483,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 					int Wl_min = wla, Fh_max = MinCond(hba, Fh);
 					for (unsigned int i=0; i<Fh_max; i++) 
 						for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wl -= StrideX;
 				}
 				hb -= StrideY;
@@ -1475,7 +1500,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fps(
 					int Wr_max = MinCond(wra, Fw), Fh_max = MinCond(hba, Fh);
 					for (unsigned int i=0; i<Fh_max; i++) 
 						for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 7);
 					wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -1508,7 +1533,7 @@ static void __attribute__ ((noinline)) KerConv2x1from3x1StrideNx1_V_fp(
 		int Acc = *PtOut<<Norm;
 		V0 = *PtIn; V1 = *(PtIn+1); PtIn += W;
 		Acc += V0*C0; Acc += V1*C1;
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 	}
 }
 
@@ -1537,7 +1562,7 @@ static void __attribute__ ((noinline)) KerConv1x2from1x3Stride1xN_H_fp(
 		int Acc = *PtOut<<Norm;
 		V0 = *(PtIn+0*W+0); V1 = *(PtIn+1*W+0); PtIn++;
 		Acc += V0*C0; Acc += V1*C1;
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 	}
 }
 
@@ -1574,7 +1599,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride1_V_fp(
 		int Acc = *PtOut<<Norm;
 		V2 = *((v2s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 		V0 = V1; V1 = V2;
 	}
 	if (Bottom) {
@@ -1583,7 +1608,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride1_V_fp(
 		V0 = *((v2s *) PtIn); PtIn += W;
 		V1 = *((v2s *) PtIn);
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 	}
 }
 
@@ -1618,7 +1643,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride2_V_fp(
 		int Acc = *PtOut<<Norm;
 		V1 = *((v2s *) PtIn); PtIn += W; V2 = *((v2s *) PtIn); PtIn += W;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 		V0 = V2;
 	}
 	if (Bottom) {
@@ -1627,7 +1652,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3Stride2_V_fp(
 		V0 = *((v2s *) PtIn); PtIn += W;
 		V1 = *((v2s *) PtIn);;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 	}
 }
 
@@ -1663,7 +1688,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3StrideS_V_fp(
 		int Acc = *PtOut<<Norm;
 		V1 = *((v2s *) PtIn); PtIn += W; V2 = *((v2s *) PtIn); PtIn += (Stride-2)*W;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 		V0 = *((v2s *) PtIn); PtIn += W;
 	}
 	if (Bottom) {
@@ -1672,7 +1697,7 @@ static void __attribute__ ((noinline)) KerConv2x3from3x3StrideS_V_fp(
 		V0 = *((v2s *) PtIn); PtIn += W;
 		V1 = *((v2s *) PtIn);
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 	}
 }
 
@@ -1704,7 +1729,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3Stride1_H_fp(
 		x0 = PtIn[0*W]; x1 = PtIn[1*W]; PtIn++;
 		V2 = gap_pack2(x0,x1);
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 		V0=V1; V1=V2;
 	}
 }
@@ -1736,7 +1761,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3Stride2_H_fp(
 		int Acc = *PtOut<<Norm;
 		X = *((v2s *) (PtIn+0*W)); Y = *((v2s *) (PtIn+1*W)); V1 = __builtin_shuffle(X,Y,(v2s){0,2}); V2 = __builtin_shuffle(X,Y,(v2s){1,3}); PtIn+=2;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 		V0=V2;
 	}
 }
@@ -1775,7 +1800,7 @@ static void __attribute__ ((noinline)) KerConv3x2from3x3StrideS_H_fp(
 			Acc = gap_sumdotp2(Iv0, Cv0, Acc); Acc += I*C0;
 			Iv0 = *((v2s *) PtI); PtI+=2; I = *PtI; PtI+=W-(Fw-1);
 			Acc = gap_sumdotp2(Iv0, Cv1, Acc); Acc += I*C1;
-			*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+			*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 			In += Stride;
 	}
 }
@@ -1808,6 +1833,9 @@ static void __attribute__ ((noinline)) KerConv4x1from5x1StrideNx1_V_fp(
 		case 4: // [0..4 x 0] => [0..2 x 0] PadR==2
 			C0 = gap_pack2(0, Filter[0*5+0]); C1 = *((v2s*) (Filter + 0*5+1));
 			break;
+                case 5: // [0..4 x 0] => [0..2 x 0] PadR==2, Wo==1
+                        C0 = *((v2s*) (Filter + 0*5+0)); C1 = gap_pack2(Filter[0*5+2], 0);
+                        break;
 	}
 	PtIn = In + (Ho_F*1-PadOrg[2])*W; PtOut = Out+Ho_F*Wo;
 	V0 = * (v2s *) PtIn; V1 = *((v2s *) PtIn + 1); PtIn += W;
@@ -1815,7 +1843,7 @@ static void __attribute__ ((noinline)) KerConv4x1from5x1StrideNx1_V_fp(
 		int Acc = *PtOut<<Norm;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
 		V0 = * (v2s *) PtIn; V1 = *((v2s *) PtIn + 1); PtIn += W;
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 	}
 
 }
@@ -1850,13 +1878,16 @@ static void __attribute__ ((noinline)) KerConv1x4from1x5Stride1xN_H_fp(
 		case 4: // [0 x 0..4] => [0 x 2..4] PadB == 2
 			C0 = gap_pack2(0, Filter[0*5+0]); C1 = *((v2s*) (Filter + 0*5+1));
 			break;
+                case 5: // [0 x 0..4] => [0 x 2..4] PadB == 2, Ho == 1
+                        C0 = *((v2s*) (Filter + 0*5+0)); C1 = gap_pack2(Filter[0*5+2], 0);
+                        break;
 	}
 	x0 = *(PtIn+0*W+0); x1 = *(PtIn+1*W+0); x2 = *(PtIn+2*W+0); x3 = *(PtIn+3*W+0); V0 = gap_pack2(x0,x1); V1 = gap_pack2(x2,x3); PtIn++;
 	for (unsigned int i=Wo_F; i<Wo_L; i++) {
 		int Acc = *PtOut<<Norm;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
 		x0 = *(PtIn+0*W+0); x1 = *(PtIn+1*W+0); x2 = *(PtIn+2*W+0); x3 = *(PtIn+3*W+0); V0 = gap_pack2(x0,x1); V1 = gap_pack2(x2,x3); PtIn++;
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 	}
 }
 
@@ -1904,6 +1935,13 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fp(
 			C6 = gap_pack2(0, Filter[3*5+0]); C7 = *((v2s*) (Filter + 3*5+1));
 			C8 = gap_pack2(0, Filter[4*5+0]); C9 = *((v2s*) (Filter + 4*5+1));
 			break;
+                case 5: // [0..4 x 0..4] => [0..2,0 x 0..4] PadR == 2
+                        C0 = *((v2s*) (Filter + 0*5+0)); C1 = gap_pack2(Filter[0*5+2], 0);
+                        C2 = *((v2s*) (Filter + 1*5+0)); C3 = gap_pack2(Filter[1*5+2], 0);
+                        C4 = *((v2s*) (Filter + 2*5+0)); C5 = gap_pack2(Filter[2*5+2], 0);
+                        C6 = *((v2s*) (Filter + 3*5+0)); C7 = gap_pack2(Filter[3*5+2], 0);
+                        C8 = *((v2s*) (Filter + 4*5+0)); C9 = gap_pack2(Filter[4*5+2], 0);
+                        break;
 	}
 	if (PadT==2) {
 		PtIn = In; PtOut = Out; Ho_F = 0;
@@ -1920,6 +1958,15 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fp(
 	}
 	PtOut = Out+Ho_F*Wo;
 	V4 = *((v2s *) PtIn); PtIn += 2; V5 = *((v2s *) PtIn); PtIn += (W-2);
+        if (Ho==1) {
+		int Acc = *PtOut<<Norm;
+                Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
+                Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc);
+                Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 15);
+                *PtOut = Acc;
+                return;
+        }
 	V6 = *((v2s *) PtIn); PtIn += 2; V7 = *((v2s *) PtIn); PtIn += (W-2);
 	for (unsigned int i=Ho_F; i<Ho_L; i++) {
 		int Acc = *PtOut<<Norm;
@@ -1929,7 +1976,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fp(
 		Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
 		Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
 		Acc = gap_sumdotp2(V8, C8, Acc); Acc = gap_sumdotp2(V9, C9, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 15);
 		*PtOut = Acc; PtOut+=Wo;
 		V0 = V2; V1 = V3; V2 = V4; V3 = V5; V4 = V6; V5 = V7; V6 = V8; V7 = V9;
 	}
@@ -1944,7 +1991,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fp(
 		Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc);
 		Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
 		Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
-		Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		Acc = gap_clip(AT_NORM(Acc, Norm), 15);
 		*PtOut = Acc; PtOut+=Wo;
 		if (PadB==2) {
 			Acc = *PtOut<<Norm;
@@ -1952,7 +1999,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride1_V_fp(
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
 			Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc);
 			Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
-			*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+			*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 		}
 	}
 }
@@ -2026,7 +2073,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride2_V_fp(
 		Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
 		Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
 		Acc = gap_sumdotp2(V8, C8, Acc); Acc = gap_sumdotp2(V9, C9, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 		V0 = V4; V1 = V5; V2 = V6; V3 = V7; V4 = V8; V5 = V9;
 	}
 	if (PadB) {
@@ -2043,7 +2090,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5Stride2_V_fp(
 			V6 = *((v2s *) PtIn); PtIn += 2; V7 = *((v2s *) PtIn);
 			Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
 		}
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 	}
 }
 
@@ -2117,7 +2164,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5StrideS_V_fp(
 		Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc);
 		Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
 		Acc = gap_sumdotp2(V8, C8, Acc); Acc = gap_sumdotp2(V9, C9, Acc);
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut+=Wo;
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15); PtOut+=Wo;
 		V0 = *((v2s *) PtIn); PtIn += 2; V1 = *((v2s *) PtIn); PtIn += (W-2);
 		V2 = *((v2s *) PtIn); PtIn += 2; V3 = *((v2s *) PtIn); PtIn += (W-2);
 	}
@@ -2134,7 +2181,7 @@ static void __attribute__ ((noinline)) KerConv4x5from5x5StrideS_V_fp(
 			V6 = *((v2s *) PtIn); PtIn += 2; V7 = *((v2s *) PtIn);
 			Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc);
 		}
-		*PtOut =  gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+		*PtOut =  gap_clip(AT_NORM(Acc, Norm), 15);
 	}
 }
 
@@ -2185,6 +2232,12 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride1_H_fp(
 			X = *((v2s *) &Filter[1*5+2]); Y = *((v2s *) &Filter[2*5+2]); C7 = __builtin_shuffle(X,Y,(v2s){0,2}); C8 = __builtin_shuffle(X,Y,(v2s){1,3});
 			C9 = gap_pack2(Filter[9], Filter[14]);
 			break;
+                case 5: // [0..4 x 0..4] => [0..4 x 0..2,0] PadB==2
+                        X = *((v2s *) &Filter[0*5+0]); Y = *((v2s *) &Filter[1*5+0]); C0 = __builtin_shuffle(X,Y,(v2s){0,2}); C1 = __builtin_shuffle(X,Y,(v2s){1,3});
+                        X = *((v2s *) &Filter[0*5+2]); Y = *((v2s *) &Filter[1*5+2]); C2 = __builtin_shuffle(X,Y,(v2s){0,2}); C3 = __builtin_shuffle(X,Y,(v2s){1,3});
+                        C4 = gap_pack2(Filter[4], Filter[9]);
+                        C5 = gap_pack2(Filter[10],0); C6 = gap_pack2(Filter[11],0); C7 = gap_pack2(Filter[12],0); C8 = gap_pack2(Filter[13],0); C9 = gap_pack2(Filter[14],0);
+                        break;
 	}
 	X = *((v2s *) (PtIn+0*W+0)); Y = *((v2s *) (PtIn+1*W+0)); V0 = __builtin_shuffle(X,Y,(v2s){0,2}); V1 = __builtin_shuffle(X,Y,(v2s){1,3});
 	X = *((v2s *) (PtIn+0*W+2)); Y = *((v2s *) (PtIn+1*W+2)); V2 = __builtin_shuffle(X,Y,(v2s){0,2}); V3 = __builtin_shuffle(X,Y,(v2s){1,3});
@@ -2197,7 +2250,7 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride1_H_fp(
 		V4 = gap_pack2(x0,x1); V9 = gap_pack2(x2,x3);
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc); Acc = gap_sumdotp2(V4, C4, Acc);
 		Acc = gap_sumdotp2(V5, C5, Acc); Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc); Acc = gap_sumdotp2(V8, C8, Acc); Acc = gap_sumdotp2(V9, C9, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 		V0=V1; V1=V2; V2=V3; V3=V4; V5=V6; V6=V7; V7=V8; V8=V9;
 	}
 }
@@ -2260,7 +2313,7 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5Stride2_H_fp(
 		X = *((v2s *) (PtIn+2*W+0)); Y = *((v2s *) (PtIn+3*W+0)); V8 = __builtin_shuffle(X,Y,(v2s){0,2}); V9 = __builtin_shuffle(X,Y,(v2s){1,3}); PtIn+=2;
 		Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc); Acc = gap_sumdotp2(V4, C4, Acc);
 		Acc = gap_sumdotp2(V5, C5, Acc); Acc = gap_sumdotp2(V6, C6, Acc); Acc = gap_sumdotp2(V7, C7, Acc); Acc = gap_sumdotp2(V8, C8, Acc); Acc = gap_sumdotp2(V9, C9, Acc);
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++;
 		V0=V2; V1=V3; V2=V4; V5=V7; V6=V8; V7=V9;
 	}
 }
@@ -2326,12 +2379,12 @@ static void __attribute__ ((noinline)) KerConv5x4from5x5StrideS_H_fp(
 		Iv0 = *((v2s *) PtI); PtI+=2; Iv1 = *((v2s *) PtI); PtI+=2; I = *PtI; PtI+=W-(Fw-1);
 		Acc = gap_sumdotp2(Iv0, C9, Acc); Acc = gap_sumdotp2(Iv1, C10, Acc); Acc += I*C11;
 
-		*PtOut = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtOut++; In += Stride;
+		*PtOut = gap_clip(AT_NORM(Acc, Norm), 15); PtOut++; In += Stride;
 
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
+static void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 	short int *__restrict__ In,
 	short int *__restrict__ Out,
 	short int *__restrict__ Filter,
@@ -2368,7 +2421,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			ht -= Stride; hb -= Stride;
 		}
@@ -2381,7 +2434,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			hb -= Stride;
 		}
@@ -2394,7 +2447,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wl -= Stride; wr -= Stride;
 		}
@@ -2407,7 +2460,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 		       		int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wr -= Stride;
 		}
@@ -2423,7 +2476,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= Stride; wr -= Stride;
 				}
 				ht -= Stride; hb -= Stride;
@@ -2439,7 +2492,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= Stride;
 				}
 				ht -= Stride; hb -= Stride;
@@ -2457,7 +2510,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= Stride; wr -= Stride;
 				}
 				hb -= Stride;
@@ -2473,7 +2526,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*Stride-PadTOrg+i)*W + (w*Stride-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= Stride;
 				}
 				hb -= Stride;
@@ -2482,7 +2535,7 @@ void __attribute__ ((noinline)) KerConvNxNStrideS_Border_fp(
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
+static void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 	short int *__restrict__ In,
 	short int *__restrict__ Out,
 	short int *__restrict__ Filter,
@@ -2520,7 +2573,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			ht -= StrideY; hb -= StrideY;
 		}
@@ -2533,7 +2586,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh_max; i++) 
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			hb -= StrideY;
 		}
@@ -2546,7 +2599,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wl -= StrideX; wr -= StrideX;
 		}
@@ -2559,7 +2612,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 		       		int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++) 
 					for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wr -= StrideX;
 		}
@@ -2575,7 +2628,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= StrideX; wr -= StrideX;
 				}
 				ht -= StrideY; hb -= StrideY;
@@ -2591,7 +2644,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(Fh, hb);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= StrideX;
 				}
 				ht -= StrideY; hb -= StrideY;
@@ -2609,7 +2662,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(Fw, wr), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= StrideX; wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -2625,7 +2678,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 					int Wh_min = wl, Wh_max = MinCond(wr, Fw), Fh_min = ht, Fh_max = MinCond(hb, Fh);
 					for (unsigned int i=Fh_min; i<Fh_max; i++) 
 						for (unsigned int j=Wh_min; j<Wh_max; j++) Acc += In[(h*StrideY-PadTOrg+i)*W + (w*StrideX-PadLOrg+j)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -2634,7 +2687,7 @@ void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Border_fp(
 	}
 }
 
-void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
+static void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 	short int *__restrict__ In,
 	short int *__restrict__ Out,
 	short int *__restrict__ Filter,
@@ -2685,7 +2738,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=Fh_min; i<Fh; i++)
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			ht -= StrideY;
 		}
@@ -2699,7 +2752,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh_max; i++)
 					for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			hb -= StrideY;
 		}
@@ -2713,7 +2766,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++)
 					for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wl -= StrideX;
 		}
@@ -2727,7 +2780,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 				int Acc = Out[Wo*h+w]<<Norm;
 				for (unsigned int i=0; i<Fh; i++)
 					for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-				Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+				Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 			}
 			wr -= StrideX;
 		}
@@ -2744,7 +2797,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 					int Wl_min = wla, Fh_min = hta;
 					for (unsigned int i=Fh_min; i<Fh; i++)
 						for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= StrideX;
 				}
 				ht -= StrideY;
@@ -2761,7 +2814,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 					int Wr_max = MinCond(wra, Fw), Fh_min = hta;
 					for (unsigned int i=Fh_min; i<Fh; i++)
 						for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= StrideX;
 				}
 				ht -= StrideY;
@@ -2780,7 +2833,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 					int Wl_min = wla, Fh_max = MinCond(hba, Fh);
 					for (unsigned int i=0; i<Fh_max; i++)
 						for (unsigned int j=Wl_min; j<Fw; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wl -= StrideX;
 				}
 				hb -= StrideY;
@@ -2797,7 +2850,7 @@ void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Border_fp(
 					int Wr_max = MinCond(wra, Fw), Fh_max = MinCond(hba, Fh);
 					for (unsigned int i=0; i<Fh_max; i++)
 						for (unsigned int j=0; j<Wr_max; j++) Acc += In[(h*StrideY-PadTOrg+i*Dh)*W + (w*StrideX-PadLOrg+j*Dw)]*Filter[Fw*i+j];
-					Out[Wo*h+w] = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+					Out[Wo*h+w] = gap_clip(AT_NORM(Acc, Norm), 15);
 					wr -= StrideX;
 				}
 				hb -= StrideY;
@@ -2972,7 +3025,8 @@ static void __attribute__ ((noinline)) KerConv5x1BorderStrideNx1_fp(
 		if  ((Wo-Wo_L)==2) {
 			KerConv4x1from5x1StrideNx1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
 			KerConv4x1from5x1StrideNx1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
-		} else KerConv4x1from5x1StrideNx1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, PadR+2);
+		} else if (Wo==1) KerConv4x1from5x1StrideNx1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 5);
+		else KerConv4x1from5x1StrideNx1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, PadR+2);
 	}
 }
 
@@ -3007,7 +3061,8 @@ static void __attribute__ ((noinline)) KerConv1x5BorderStride1xN_fp(
 		if((Ho-Ho_L)==2) {
 			KerConv1x4from1x5Stride1xN_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
 			KerConv1x4from1x5Stride1xN_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
-		} else KerConv1x4from1x5Stride1xN_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, PadB+2);
+		} else if (Ho==1) KerConv1x4from1x5Stride1xN_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 5);
+		else KerConv1x4from1x5Stride1xN_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, PadB+2);
 	}
 }
 
@@ -3037,16 +3092,22 @@ static void __attribute__ ((noinline)) KerConv5x5BorderStride1_fp(
 		KerConv4x5from5x5Stride1_V_fp(In, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+1, Filter, 1);
 	} else if (PadL==1) KerConv4x5from5x5Stride1_V_fp(In, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out, Filter, 1);
 	if (PadR==2) {
-		KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
-		KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
+		if (Wo==1) KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 5);
+		else {
+			KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
+			KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
+		}
 	} else if (PadR==1) KerConv4x5from5x5Stride1_V_fp(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 3);
 	if (PadT==2) {
 		KerConv5x4from5x5Stride1_H_fp(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F, Filter, 2);
 		KerConv5x4from5x5Stride1_H_fp(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F+Wo, Filter, 1);
 	} else if (PadT==1) KerConv5x4from5x5Stride1_H_fp(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F, Filter, 1);
 	if (PadB==2) {
-		KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
-		KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
+		if (Ho==1) KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L)*Wo+Wo_F, Filter, 5);
+		else {
+			KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
+			KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
+		}
 	} else if (PadB==1) KerConv5x4from5x5Stride1_H_fp(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
 }
 
@@ -3273,7 +3334,8 @@ static void __attribute__ ((noinline)) KerConv5x1BorderStrideNx1_fps(
 		if ((Wo-Wo_L)==2) {
 			KerConv4x1from5x1StrideNx1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
 			KerConv4x1from5x1StrideNx1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
-		} else KerConv4x1from5x1StrideNx1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, PadR+2);
+		} else if (Wo==1) KerConv4x1from5x1StrideNx1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 5);
+		else KerConv4x1from5x1StrideNx1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, PadR+2);
 	}
 }
 
@@ -3308,7 +3370,8 @@ static void __attribute__ ((noinline)) KerConv1x5BorderStride1xN_fps(
 		if ((Ho-Ho_L)==2) { // Happens only if stride == 1
 			KerConv1x4from1x5Stride1xN_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
 			KerConv1x4from1x5Stride1xN_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
-		} else KerConv1x4from1x5Stride1xN_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, PadB+2);
+		} else if (Ho==1) KerConv1x4from1x5Stride1xN_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 5);
+		else KerConv1x4from1x5Stride1xN_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, PadB+2);
 	}
 }
 
@@ -3339,16 +3402,22 @@ static void __attribute__ ((noinline)) KerConv5x5BorderStride1_fps(
 		KerConv4x5from5x5Stride1_V_fps(In, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+1, Filter, 1);
 	} else if (PadL==1) KerConv4x5from5x5Stride1_V_fps(In, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out, Filter, 1);
 	if (PadR==2) {
-		KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
-		KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
+		if (Wo==1) KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 5);
+		else {
+			KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-2, Filter, 3);
+			KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 4);
+		}
 	} else if (PadR==1) KerConv4x5from5x5Stride1_V_fps(In+Wo_L*Stride-PadLOrg, W, PadOrg, Pad, Wo, Ho, Ho_F, Ho_L, Norm, Out+Wo-1, Filter, 3);
 	if (PadT==2) {
 		KerConv5x4from5x5Stride1_H_fps(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F, Filter, 2);
 		KerConv5x4from5x5Stride1_H_fps(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F+Wo, Filter, 1);
 	} else if (PadT==1) KerConv5x4from5x5Stride1_H_fps(In, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Wo_F, Filter, 1);
 	if (PadB==2) {
-		KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
-		KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
+		if (Ho==1) KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L)*Wo+Wo_F, Filter, 5);
+		else {
+			KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
+			KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+(Ho_L+1)*Wo+Wo_F, Filter, 4);
+		}
 	} else if (PadB==1) KerConv5x4from5x5Stride1_H_fps(In+(Ho_L*Stride-PadTOrg)*W, W, PadLOrg, Wo, Wo_F, Wo_L, Norm, Out+Ho_L*Wo+Wo_F, Filter, 3);
 }
 
@@ -3497,10 +3566,10 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fps(
 					v4s O = LineOut[w];
 					v4s I = LineIn[w];
 					int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm, Acc2 = O[2]<<Norm, Acc3 = O[3]<<Norm;
-					Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, I[0], C0), Norm), 7);
-					Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, I[1], C0), Norm), 7);
-					Acc2 = gap_clip(gap_roundnorm_reg(gap_macs(Acc2, I[2], C0), Norm), 7);
-					Acc3 = gap_clip(gap_roundnorm_reg(gap_macs(Acc3, I[3], C0), Norm), 7);
+					Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, I[0], C0), Norm), 7);
+					Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, I[1], C0), Norm), 7);
+					Acc2 = gap_clip(AT_NORM(gap_macs(Acc2, I[2], C0), Norm), 7);
+					Acc3 = gap_clip(AT_NORM(gap_macs(Acc3, I[3], C0), Norm), 7);
 					LineOut[w] =  gap_pack4(Acc0, Acc1, Acc2, Acc3);
 				}
 			}
@@ -3512,14 +3581,14 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fps(
 				for (unsigned int w=0; w<(IterW/4); w++) {
 					O = LineOut[w]; I = LineIn[w];
 					int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm, Acc2 = O[2]<<Norm, Acc3 = O[3]<<Norm;
-					Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, I[0], C0), Norm), 7);
-					Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, I[1], C0), Norm), 7);
-					Acc2 = gap_clip(gap_roundnorm_reg(gap_macs(Acc2, I[2], C0), Norm), 7);
-					Acc3 = gap_clip(gap_roundnorm_reg(gap_macs(Acc3, I[3], C0), Norm), 7);
+					Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, I[0], C0), Norm), 7);
+					Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, I[1], C0), Norm), 7);
+					Acc2 = gap_clip(AT_NORM(gap_macs(Acc2, I[2], C0), Norm), 7);
+					Acc3 = gap_clip(AT_NORM(gap_macs(Acc3, I[3], C0), Norm), 7);
 					LineOut[w] =  gap_pack4(Acc0, Acc1, Acc2, Acc3);
 				}
 				O = LineOut[IterW/4]; I = LineIn[IterW/4];
-			       	O[0] = gap_clip(gap_roundnorm_reg(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
+			       	O[0] = gap_clip(AT_NORM(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
 				LineOut[IterW/4] = O;
 			}
 			break;
@@ -3530,15 +3599,15 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fps(
 				for (unsigned int w=0; w<(IterW/4); w++) {
 					O = LineOut[w]; I = LineIn[w];
 					int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm, Acc2 = O[2]<<Norm, Acc3 = O[3]<<Norm;
-					Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, I[0], C0), Norm), 7);
-					Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, I[1], C0), Norm), 7);
-					Acc2 = gap_clip(gap_roundnorm_reg(gap_macs(Acc2, I[2], C0), Norm), 7);
-					Acc3 = gap_clip(gap_roundnorm_reg(gap_macs(Acc3, I[3], C0), Norm), 7);
+					Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, I[0], C0), Norm), 7);
+					Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, I[1], C0), Norm), 7);
+					Acc2 = gap_clip(AT_NORM(gap_macs(Acc2, I[2], C0), Norm), 7);
+					Acc3 = gap_clip(AT_NORM(gap_macs(Acc3, I[3], C0), Norm), 7);
 					LineOut[w] =  gap_pack4(Acc0, Acc1, Acc2, Acc3);
 				}
 				O = LineOut[IterW/4]; I = LineIn[IterW/4];
-			       	O[0] = gap_clip(gap_roundnorm_reg(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
-			       	O[1] = gap_clip(gap_roundnorm_reg(gap_macs(O[1]<<Norm, I[1], C0), Norm), 7);
+			       	O[0] = gap_clip(AT_NORM(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
+			       	O[1] = gap_clip(AT_NORM(gap_macs(O[1]<<Norm, I[1], C0), Norm), 7);
 				LineOut[IterW/4] = O;
 			}
 			break;
@@ -3549,16 +3618,16 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fps(
 				for (unsigned int w=0; w<(IterW/4); w++) {
 					O = LineOut[w]; I = LineIn[w];
 					int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm, Acc2 = O[2]<<Norm, Acc3 = O[3]<<Norm;
-					Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, I[0], C0), Norm), 7);
-					Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, I[1], C0), Norm), 7);
-					Acc2 = gap_clip(gap_roundnorm_reg(gap_macs(Acc2, I[2], C0), Norm), 7);
-					Acc3 = gap_clip(gap_roundnorm_reg(gap_macs(Acc3, I[3], C0), Norm), 7);
+					Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, I[0], C0), Norm), 7);
+					Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, I[1], C0), Norm), 7);
+					Acc2 = gap_clip(AT_NORM(gap_macs(Acc2, I[2], C0), Norm), 7);
+					Acc3 = gap_clip(AT_NORM(gap_macs(Acc3, I[3], C0), Norm), 7);
 					LineOut[w] =  gap_pack4(Acc0, Acc1, Acc2, Acc3);
 				}
 				O = LineOut[IterW/4]; I = LineIn[IterW/4];
-			       	O[0] = gap_clip(gap_roundnorm_reg(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
-			       	O[1] = gap_clip(gap_roundnorm_reg(gap_macs(O[1]<<Norm, I[1], C0), Norm), 7);
-			       	O[2] = gap_clip(gap_roundnorm_reg(gap_macs(O[2]<<Norm, I[2], C0), Norm), 7);
+			       	O[0] = gap_clip(AT_NORM(gap_macs(O[0]<<Norm, I[0], C0), Norm), 7);
+			       	O[1] = gap_clip(AT_NORM(gap_macs(O[1]<<Norm, I[1], C0), Norm), 7);
+			       	O[2] = gap_clip(AT_NORM(gap_macs(O[2]<<Norm, I[2], C0), Norm), 7);
 				LineOut[IterW/4] = O;
 			}
 			break;
@@ -3595,7 +3664,7 @@ static void __attribute__ ((noinline)) KerConv1x1Stride2_Body_fps(
 			int Acc = *PtO<<Norm;
 			int I = *PtI; PtI+=Stride;
 			Acc += I*C0;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 7); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -3630,7 +3699,7 @@ static void __attribute__ ((noinline)) KerConv1x1StrideS_Body_fps(
 			int Acc = *PtO<<Norm;
 			int I = *PtI; PtI+=Stride;
 			Acc += I*C0;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 7); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -3667,7 +3736,7 @@ static void __attribute__ ((noinline)) KerConv3x1Stride1x1_Body_fps(
 		V0 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 		for (unsigned int h=Ho_F; h<Ho_L; h++) {
 			int Acc = *PtO<<Norm;
-			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			V0 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			*PtO = Acc; PtO+=Wo;
 		}
@@ -3706,7 +3775,7 @@ static void __attribute__ ((noinline)) KerConv3x1Stride2x1_Body_fps(
 		V0 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 		for (unsigned int h=Ho_F; h<Ho_L; h++) {
 			int Acc = *PtO<<Norm;
-			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			V0 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			*PtO = Acc; PtO+=Wo;
 		}
@@ -3749,7 +3818,7 @@ static void __attribute__ ((noinline)) KerConv1x3Stride1x1_Body_fps(
 			int Acc = *PtO<<Norm;
 			int X0 = *PtI; PtI = ((signed char *)PtI+W);
 			V0 = __builtin_shuffle(V0, (v4s) X0, Mask);
-			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			*PtO = Acc; PtO+=Wo;
 		}
 		PtO1++;
@@ -3792,7 +3861,7 @@ static void __attribute__ ((noinline)) KerConv1x3Stride1x2_Body_fps(
 			unsigned int X1 = *(unsigned char *) PtI; PtI = ((signed char *)PtI+W);
 			X0 = X0 | (X1<<8);
 			V0 = __builtin_shuffle(V0, (v4s) X0, Mask);
-			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			*PtO = Acc; PtO+=Wo;
 		}
 		PtO1++;
@@ -3833,7 +3902,7 @@ static void __attribute__ ((noinline)) KerConv3x3Stride1_Body_fps(
 			int Acc = *PtO<<Norm;
 			V2 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-			Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			V0 = V1; V1 = V2;
 			*PtO = Acc; PtO+=Wo;
 		}
@@ -3874,7 +3943,7 @@ static void __attribute__ ((noinline)) KerConv3x3Stride2_Body_fps(
 			V1 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			V2 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-			Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			V0 = V2;
 			*PtO = Acc; PtO+=Wo;
 		}
@@ -3915,7 +3984,7 @@ static void __attribute__ ((noinline)) KerConv3x3StrideS_Body_fps(
 			V1 = *PtI; PtI = (v4s*) ((signed char *)PtI+W);
 			V2 = *PtI; PtI = (v4s*) ((signed char *)PtI+(Stride-2)*W);
 			Acc = gap_sumdotp4(V0, C0, Acc); Acc = gap_sumdotp4(V1, C1, Acc); Acc = gap_sumdotp4(V2, C2, Acc);
-			Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 7);
+			Acc = gap_clip(AT_NORM(Acc, Norm), 7);
 			*PtO = Acc; PtO+=Wo;
 		}
 		PtO1++;
@@ -3957,7 +4026,7 @@ static void __attribute__ ((noinline)) KerConv5x1Stride1x1_Body_fps(
        		for (int w=Wo_F; w<Wo_L; w++) {
 			int S = *PtO<<N;
 			S = gap_sumdotp4(V0,  C0,  S); S += x0*C1;
-			S =  gap_clip(gap_roundnorm_reg(S, N), 7);
+			S =  gap_clip(AT_NORM(S, N), 7);
 			V0 = __builtin_shuffle(V0, (v4s) x0, Mask); x0 = *PtI; PtI++;
 			*PtO = S; PtO++;
 		}
@@ -3999,7 +4068,7 @@ static void __attribute__ ((noinline)) KerConv5x1Stride2x1_Body_fps(
 			int S = *PtO<<N;
 			V0 = *PtI++; x0 = *((signed char *) PtI); PtI = (v4s*) ((signed char *)PtI+W-4);
 			S = gap_sumdotp4(V0,  C0,  S); S += x0*C1;
-			S =  gap_clip(gap_roundnorm_reg(S, N), 7);
+			S =  gap_clip(AT_NORM(S, N), 7);
 			*PtO = S; PtO+=Wo;
 		}
 		PtO1++;
@@ -4048,7 +4117,7 @@ static void __attribute__ ((noinline)) KerConv1x5Stride1x1_Body_fps(
 			V0 = __builtin_shuffle(V0, (v4s)((int) V1), Mask);
 			V1 = (signed char)(*PtI); PtI = PtI+W;
 			S = gap_sumdotp4(V0,  C0,  S); S += V1*C1;
-			S =  gap_clip(gap_roundnorm_reg(S, N), 7);
+			S =  gap_clip(AT_NORM(S, N), 7);
 			*PtO = S; PtO+=Wo;
 		}
 		PtO1++;
@@ -4096,7 +4165,7 @@ static void __attribute__ ((noinline)) KerConv1x5Stride1x2_Body_fps(
 			V1[1] = x0; V0 = __builtin_shuffle(V0, (v4s)((int) V1), Mask);
 			x1 = (*PtI); PtI = PtI+W; V1 = (v4s)((int)x1);
 			S = gap_sumdotp4(V0,  C0,  S); S += x1*C1;
-			S =  gap_clip(gap_roundnorm_reg(S, N), 7);
+			S =  gap_clip(AT_NORM(S, N), 7);
 			*PtO = S; PtO+=Wo;
 		}
 		PtO1++;
@@ -4152,7 +4221,7 @@ static void __attribute__ ((noinline)) KerConv5x5Stride1_Body_fps(
 			S = gap_sumdotp4(V0,  C0,  S); S = gap_sumdotp4(V1,  C1,  S);
 			S = gap_sumdotp4(V2,  C2,  S); S = gap_sumdotp4(V3,  C3,  S);
 			S = gap_sumdotp4(V4,  C4,  S); S = gap_sumdotp4(V5,  C5,  S); S = gap_sumdotp4(V6,  C6,  S);
-			S =  gap_clip(gap_roundnorm_reg(S, N), 7);
+			S =  gap_clip(AT_NORM(S, N), 7);
 			V0 = V1; V1 = V2; V2 = V3; V3 = V4;
 			V5 = __builtin_shuffle(V5, V6, Mask);
 			*PtO = S; PtO+=Wo;
@@ -4208,7 +4277,7 @@ static void __attribute__ ((noinline)) KerConv5x5Stride2_Body_fps(
 			S = gap_sumdotp4(V0,  C0,  S); S = gap_sumdotp4(V1,  C1,  S);
 			S = gap_sumdotp4(V2,  C2,  S); S = gap_sumdotp4(V3,  C3,  S);
 			S = gap_sumdotp4(V4,  C4,  S); S = gap_sumdotp4(V5,  C5,  S); S = gap_sumdotp4(V6,  C6,  S);
-			S =  gap_clip(gap_roundnorm_reg(S, Norm), 7);
+			S =  gap_clip(AT_NORM(S, Norm), 7);
 			V0 = V2; V1 = V3; V2 = V4;
 			V5 = __builtin_shuffle(V5, V6, Mask);
 			*PtO = S; PtO+=Wo;
@@ -4263,7 +4332,7 @@ static void __attribute__ ((noinline)) KerConv5x5StrideS_Body_fps(
 			S = gap_sumdotp4(V0,  C0,  S); S = gap_sumdotp4(V1,  C1,  S);
 			S = gap_sumdotp4(V2,  C2,  S); S = gap_sumdotp4(V3,  C3,  S);
 			S = gap_sumdotp4(V4,  C4,  S); S = gap_sumdotp4(V5,  C5,  S); S = gap_sumdotp4(V6,  C6,  S);
-			S =  gap_clip(gap_roundnorm_reg(S, Norm), 7);
+			S =  gap_clip(AT_NORM(S, Norm), 7);
 			// V5 = __builtin_shuffle(V5, V6, Mask);
 			*PtO = S; PtO+=Wo;
 		}
@@ -4300,7 +4369,7 @@ static void __attribute__ ((noinline)) KerConvNxNStrideS_Body_fps(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadT+i)*W + (w*Stride-PadL+j)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 7); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4336,7 +4405,7 @@ static void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Body_fps(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadT+i)*W + (w*StrideX-PadL+j)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 7); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4374,7 +4443,7 @@ static void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Body_fps(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadT+i*Dh)*W + (w*StrideX-PadL+j*Dw)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 7); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 7); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4409,11 +4478,11 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fp(
 			for (unsigned int w=0; w<(IterW/2); w++) {
 				v2s O = LineOut[w];
 				int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm;
-				Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, PtI[2*w  ], C0), Norm), 15);
-				Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, PtI[2*w+1], C0), Norm), 15);
+				Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, PtI[2*w  ], C0), Norm), 15);
+				Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, PtI[2*w+1], C0), Norm), 15);
 				LineOut[w] =  gap_pack2(Acc0, Acc1);
 			}
-			Out[Wo*h+Wo_L-1] = gap_clip(gap_roundnorm_reg(gap_macs((Out[Wo*h+Wo_L-1]<<Norm), PtI[IterW-1], C0), Norm), 15);
+			Out[Wo*h+Wo_L-1] = gap_clip(AT_NORM(gap_macs((Out[Wo*h+Wo_L-1]<<Norm), PtI[IterW-1], C0), Norm), 15);
 		}
 	} else {
 		for (unsigned int h=Ho_F; h<Ho_L; h++) {
@@ -4422,83 +4491,13 @@ static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_fp(
 			for (unsigned int w=0; w<(IterW/2); w++) {
 				v2s O = LineOut[w];
 				int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm;
-				Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, PtI[2*w  ], C0), Norm), 15);
-				Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, PtI[2*w+1], C0), Norm), 15);
+				Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, PtI[2*w  ], C0), Norm), 15);
+				Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, PtI[2*w+1], C0), Norm), 15);
 				LineOut[w] =  gap_pack2(Acc0, Acc1);
 			}
 		}
 	}
 }
-
-
-
-static void __attribute__ ((noinline)) KerConv1x1Stride1_Body_2In_fp(
-	short int *__restrict__ In,
-	short int *__restrict__ Out,
-	short int *__restrict__ Filter,
-	int W,
-	int H,
-	int Wo,
-	int Wo_F,
-	int Wo_L,
-	int Ho,
-	int Ho_F,
-	int Ho_L,
-	v4s Pad,
-	int Norm
-	)
-
-{
-	unsigned short int Stride = 1;
-	unsigned short int PadL = Pad[0], PadT = Pad[2];
-
-	v2s C = ((v2s *)Filter)[0];
-	int IterW = Wo_L-Wo_F;
-       	for (unsigned int h=Ho_F; h<Ho_L; h++) {
-		short int *LineOut = &Out[Wo*h+Wo_F];
-		short int *PtI = In + (h*Stride-PadT)*W + (Wo_F*Stride-PadL);
-		for (unsigned int w=0; w<IterW; w++) {
-			int O = LineOut[w]<<Norm;
-			O = gap_sumdotp2(gap_pack2(PtI[w], PtI[w+W*H]), C, O);
-			LineOut[w] = gap_clip(gap_roundnorm_reg(O, Norm), 15);
-		}
-	}
-}
-
-static void __attribute__ ((noinline)) KerConv1x1Stride2_Body_2In_fp(
-	short int *__restrict__ In,
-	short int *__restrict__ Out,
-	short int *__restrict__ Filter,
-	int W,
-	int H,
-	int Wo,
-	int Wo_F,
-	int Wo_L,
-	int Ho,
-	int Ho_F,
-	int Ho_L,
-	v4s Pad,
-	int Norm
-	)
-
-{
-	unsigned short int Stride = 2;
-	unsigned short int PadL = Pad[0], PadT = Pad[2];
-
-	v2s C = ((v2s *)Filter)[0];
-	int IterW = Wo_L-Wo_F;
-       	for (unsigned int h=Ho_F; h<Ho_L; h++) {
-		short int *LineOut = &Out[Wo*h+Wo_F];
-		short int *PtI = In + (h*Stride-PadT)*W + (Wo_F*Stride-PadL);
-		for (unsigned int w=0; w<IterW; w++) {
-			int O = LineOut[w]<<Norm;
-			O = gap_sumdotp2(gap_pack2(PtI[2*w], PtI[2*w+W*H]), C, O);
-			LineOut[w] = gap_clip(gap_roundnorm_reg(O, Norm), 15);
-		}
-	}
-}
-
-
 
 static void __attribute__ ((noinline)) KerConv1x1Stride2_Body_fp(
 	short int *__restrict__ In,
@@ -4529,11 +4528,11 @@ static void __attribute__ ((noinline)) KerConv1x1Stride2_Body_fp(
 			for (unsigned int w=0; w<(IterW/2); w++) {
 				v2s O = LineOut[w];
 				int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm;
-				Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, PtI[4*w  ], C0), Norm), 15);
-				Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, PtI[4*w+2], C0), Norm), 15);
+				Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, PtI[4*w  ], C0), Norm), 15);
+				Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, PtI[4*w+2], C0), Norm), 15);
 				LineOut[w] =  gap_pack2(Acc0, Acc1);
 			}
-			Out[Wo*h+Wo_L-1] = gap_clip(gap_roundnorm_reg(gap_macs((Out[Wo*h+Wo_L-1]<<Norm), PtI[2*(IterW-1)], C0), Norm), 15);
+			Out[Wo*h+Wo_L-1] = gap_clip(AT_NORM(gap_macs((Out[Wo*h+Wo_L-1]<<Norm), PtI[2*(IterW-1)], C0), Norm), 15);
 		}
 	} else {
 		for (unsigned int h=Ho_F; h<Ho_L; h++) {
@@ -4542,8 +4541,8 @@ static void __attribute__ ((noinline)) KerConv1x1Stride2_Body_fp(
 			for (unsigned int w=0; w<(IterW/2); w++) {
 				v2s O = LineOut[w];
 				int Acc0 = O[0]<<Norm, Acc1 = O[1]<<Norm;
-				Acc0 = gap_clip(gap_roundnorm_reg(gap_macs(Acc0, PtI[4*w  ], C0), Norm), 15);
-				Acc1 = gap_clip(gap_roundnorm_reg(gap_macs(Acc1, PtI[4*w+2], C0), Norm), 15);
+				Acc0 = gap_clip(AT_NORM(gap_macs(Acc0, PtI[4*w  ], C0), Norm), 15);
+				Acc1 = gap_clip(AT_NORM(gap_macs(Acc1, PtI[4*w+2], C0), Norm), 15);
 				LineOut[w] =  gap_pack2(Acc0, Acc1);
 			}
 		}
@@ -4581,7 +4580,7 @@ static void __attribute__ ((noinline)) KerConv1x1StrideS_Body_fp(
 			int Acc = *PtO<<Norm;
 			I = *PtI; PtI+=Stride;
 			Acc += I*C0;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4621,7 +4620,7 @@ static void __attribute__ ((noinline)) KerConv3x1Stride1x1_Body_fp(
        		for (int w=Wo_F; w<Wo_L; w++) {
 			int Acc = *PtO<<Norm;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc += V1*C1;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 			V0 = __builtin_shuffle(V0, (v2s) V1, Mask);
 			V1 = *PtI++;
 		}
@@ -4662,7 +4661,7 @@ static void __attribute__ ((noinline)) KerConv3x1Stride2x1_Body_fp(
 			int Acc = *PtO<<Norm;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc += V1*C1;
 			V0 = *PtI++; V1 = *(short int *) PtI; PtI = (v2s*) ((short int *)PtI+W-2);
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO+=Wo;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO+=Wo;
 		}
 		PtO1++;
 	}
@@ -4705,7 +4704,7 @@ static void __attribute__ ((noinline)) KerConv1x3Stride1x1_Body_fp(
 			V0 = __builtin_shuffle(V0, (v2s) V1, Mask);
 			V1 = *PtI; PtI = PtI+W;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc += V1*C1;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO+=Wo;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO+=Wo;
 		}
 		PtO1++;
 	}
@@ -4747,7 +4746,7 @@ static void __attribute__ ((noinline)) KerConv1x3Stride1x2_Body_fp(
 			V0 = (v2s) gap_pack2(V1, *PtI); PtI = PtI+W;
 			V1 = *PtI; PtI = PtI+W;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc += V1*C1;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO+=Wo;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO+=Wo;
 		}
 		PtO1++;
 	}
@@ -4789,7 +4788,7 @@ static void __attribute__ ((noinline)) KerConv3x3Stride1_Body_fp(
 			V3 = *PtI++; V4 = *PtI; PtI = (v2s*) ((short int *)PtI+W-2);
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
 			Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc);
-			Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+			Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 15);
 			V0 = V1; V1 = V3;
 			V2 = __builtin_shuffle(V2, V4, (v2s) {1, 2});
 			*PtO = Acc; PtO+=Wo; 
@@ -4834,7 +4833,7 @@ static void __attribute__ ((noinline)) KerConv3x3Stride2_Body_fp(
 			V4 = *PtI++; V5 = *PtI; PtI = (v2s*) ((short int *)PtI+W-2);
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc);
 			Acc = gap_sumdotp2(V2, C2, Acc); Acc = gap_sumdotp2(V3, C3, Acc);
-			Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc); Acc = gap_clip(gap_roundnorm_reg(Acc, Norm), 15);
+			Acc = gap_sumdotp2(V4, C4, Acc); Acc = gap_sumdotp2(V5, C5, Acc); Acc = gap_clip(AT_NORM(Acc, Norm), 15);
 			V0 = V4; V1 = V5;
 			*PtO = Acc; PtO+=Wo;
 		}
@@ -4882,7 +4881,7 @@ static void __attribute__ ((noinline)) KerConv3x3StrideS_Body_fp(
 			Acc = gap_sumdotp2(Iv0, Cv1, Acc); Acc += I*C1;
 			Iv0 = *((v2s *) PtI); PtI+=2; I = *PtI; PtI+=W-(Fw-1);
 			Acc = gap_sumdotp2(Iv0, Cv2, Acc);Acc += I*C2;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4924,7 +4923,7 @@ static void __attribute__ ((noinline)) KerConv5x1Stride1x1_Body_fp(
 			V0 = __builtin_shuffle(V0, V1, Mask); V1 = __builtin_shuffle(V1, (v2s) V2, Mask);
 			V2 = *((short int *) PtI); PtI = (v2s *) ((short int *)PtI + 1);
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc += V2*C2;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -4964,7 +4963,7 @@ static void __attribute__ ((noinline)) KerConv5x1Stride2x1_Body_fp(
 			int Acc = *PtO<<Norm;
 			V0 = V1; V1 = gap_pack2(V2, *PtI); PtI++; V2 = *PtI; PtI++;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc += V2*C2;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -5009,7 +5008,7 @@ static void __attribute__ ((noinline)) KerConv1x5Stride1x1_Body_fp(
 			V0 = __builtin_shuffle(V0, V1, Mask); V1 = __builtin_shuffle(V1, (v2s) V2, Mask);
 			V2 = *PtI; PtI = PtI + W;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc += V2*C2;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO+=Wo;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO+=Wo;
 		}
 	}
 }
@@ -5048,7 +5047,7 @@ static void __attribute__ ((noinline)) KerConv1x5Stride1x2_Body_fp(
 			int Acc = *PtO<<Norm;
 			V0 = V1; V1 = gap_pack2(V2, *PtI); PtI += W; V2 = *PtI; PtI += W;
 			Acc = gap_sumdotp2(V0, C0, Acc); Acc = gap_sumdotp2(V1, C1, Acc); Acc += V2*C2;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO+=Wo;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO+=Wo;
 		}
 	}
 }
@@ -5102,7 +5101,7 @@ static void __attribute__ ((noinline)) KerConv5x5Stride1_Body_fp(
 			S = gap_sumdotp2(V4,  C4,  S); S = gap_sumdotp2(V5,  C5,  S); S = gap_sumdotp2(V11, C11, S);
 			S = gap_sumdotp2(V6,  C6,  S); S = gap_sumdotp2(V7,  C7,  S);
 			S = gap_sumdotp2(V8,  C8,  S); S = gap_sumdotp2(V9,  C9,  S); S = gap_sumdotp2(V12, C12, S);
-			S =  gap_clip(gap_roundnorm_reg(S, Norm), 15);
+			S =  gap_clip(AT_NORM(S, Norm), 15);
 			V0 = V2; V1 = V3; V2 = V4; V3 = V5; V4 = V6; V5 = V7; V6 = V8; V7 = V9;
 			V10 = __builtin_shuffle(V10, V11, Mask); V11 = __builtin_shuffle(V11, V12, Mask);
 			*PtO = S; PtO+=Wo;
@@ -5157,7 +5156,7 @@ static void __attribute__ ((noinline)) KerConv5x5Stride2_Body_fp(
 			S = gap_sumdotp2(V2, C2, S); S = gap_sumdotp2(V3, C3, S);
 			S = gap_sumdotp2(V4, C4, S); S = gap_sumdotp2(V5, C5, S); S = gap_sumdotp2(V11, C11, S);
 			S = gap_sumdotp2(V6, C6, S); S = gap_sumdotp2(V7, C7, S);
-			S = gap_sumdotp2(V8, C8, S); S = gap_sumdotp2(V9, C9, S); S = gap_sumdotp2(V12, C12, S); S = gap_clip(gap_roundnorm_reg(S, Norm), 15);
+			S = gap_sumdotp2(V8, C8, S); S = gap_sumdotp2(V9, C9, S); S = gap_sumdotp2(V12, C12, S); S = gap_clip(AT_NORM(S, Norm), 15);
 			V10 = V11; V11 = V12; V0 = V4; V1 = V5; V2 = V6; V3 = V7; V4 = V8; V5 = V9;
 			*PtO = S; PtO+=Wo;
 		}
@@ -5214,7 +5213,7 @@ static void __attribute__ ((noinline)) KerConv5x5StrideS_Body_fp(
 			Acc = gap_sumdotp2(Iv0, Cv6, Acc); Acc = gap_sumdotp2(Iv1, Cv7, Acc); Acc += I*C3;
 			Iv0 = *((v2s *) PtI); PtI+=2; Iv1 = *((v2s *) PtI); PtI+=2; I = *PtI; PtI+=W-(Fw-1);
 			Acc = gap_sumdotp2(Iv0, Cv8, Acc); Acc = gap_sumdotp2(Iv1, Cv9, Acc); Acc += I*C4;
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -5249,7 +5248,7 @@ static void __attribute__ ((noinline)) KerConvNxNStrideS_Body_fp(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*Stride-PadT+i)*W + (w*Stride-PadL+j)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -5285,7 +5284,7 @@ static void __attribute__ ((noinline)) KerConvNxMStrideSxSy_Body_fp(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadT+i)*W + (w*StrideX-PadL+j)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -5323,7 +5322,7 @@ static void __attribute__ ((noinline)) KerConvNxMDxDyStrideSxSy_Body_fp(
 			for (unsigned int i=0; i<Fh; i++) {
 				for (unsigned int j=0; j<Fw; j++) Acc += In[(h*StrideY-PadT+i*Dh)*W + (w*StrideX-PadL+j*Dw)]*Filter[Fw*i+j];
 			}
-			*PtO = gap_clip(gap_roundnorm_reg(Acc, Norm), 15); PtO++;
+			*PtO = gap_clip(AT_NORM(Acc, Norm), 15); PtO++;
 		}
 		PtO = PtO + (Wo-Wo_L)+Wo_F;
 	}
@@ -5426,22 +5425,10 @@ void KerParConv1x1Stride1_fp(KerConv_fp_T *Arg)
 	unsigned int InFeatures = Arg->InFeatures;
 		
        	for (unsigned int of=First; of<Last; of++) {
-#if 0
-	       	for (unsigned int If=0; If<(InFeatures/2); If++) {
-			short int *in = In+W*H*2*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + 2*If), *out = Out+Wo*Ho*(of);
-			KerConv1x1Stride1_Body_2In_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
-	       	}
-		if (InFeatures & 0x1) {
-			unsigned int If=InFeatures-1;
-			short int *in = In+W*H*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + If), *out = Out+Wo*Ho*(of);
-			KerConv1x1Stride1_Body_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
-		}
-#else
 	       	for (unsigned int If=0; If<InFeatures; If++) {
 			short int *in = In+W*H*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + If), *out = Out+Wo*Ho*(of);
 			KerConv1x1Stride1_Body_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
 	       	}
-#endif
 	}
 	gap_waitbarrier(0);
 }
@@ -5472,22 +5459,10 @@ void KerParConv1x1Stride2_fp(KerConv_fp_T *Arg)
 	unsigned int InFeatures = Arg->InFeatures;
 		
        	for (unsigned int of=First; of<Last; of++) {
-#if 0
-	       	for (unsigned int If=0; If<(InFeatures/2); If++) {
-			short int *in = In+W*H*2*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + 2*If), *out = Out+Wo*Ho*(of);
-			KerConv1x1Stride2_Body_2In_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
-	       	}
-		if (InFeatures & 0x1) {
-			unsigned int If=InFeatures-1;
-			short int *in = In+W*H*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + If), *out = Out+Wo*Ho*(of);
-			KerConv1x1Stride2_Body_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
-		}
-#else
 	       	for (unsigned int If=0; If<InFeatures; If++) {
 			short int *in = In+W*H*If, *filter = Filter+FS*FS*(TotalInFeatures*of  + If), *out = Out+Wo*Ho*(of);
 			KerConv1x1Stride2_Body_fp(in, out, filter, W, H, Wo, Wo_F, Wo_L, Ho, Ho_F, Ho_L, PadIn, Norm);
 	       	}
-#endif
 	}
 	gap_waitbarrier(0);
 }

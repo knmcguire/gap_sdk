@@ -148,6 +148,11 @@ PULP_LIB_FC_SRCS_rt     += kernel/vivosoc3/fll.c
 PULP_LIB_FC_SRCS_rt     += kernel/vivosoc3/freq.c
 endif
 
+ifeq '$(pulp_chip_family)' 'vivosoc4'
+PULP_LIB_FC_SRCS_rt     += kernel/vivosoc4/fll.c 
+PULP_LIB_FC_SRCS_rt     += kernel/vivosoc4/freq.c
+endif
+
 
 PULP_LIB_FC_SRCS_rt += kernel/cluster.c kernel/pulpos_emu.c
 
@@ -168,6 +173,10 @@ endif
 
 ifeq '$(pulp_chip_family)' 'pulpissimo'
 PULP_LIB_FC_SRCS_rt += kernel/pulpissimo/pulpissimo.c	
+endif
+
+ifeq '$(pulp_chip_family)' 'pulp'
+PULP_LIB_FC_SRCS_rt += kernel/pulp/pulp.c	
 endif
 
 INSTALL_TARGETS += $(INSTALL_DIR)/lib/$(pulp_chip)/$(PULP_LIB_NAME_rt)/crt0.o

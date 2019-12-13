@@ -29,7 +29,7 @@
  */
 
 #include "pmsis_driver/pmu/pmsis_pmu.h"
-#include "pmsis_hal/soc_eu/pmsis_soc_eu.h"
+#include "pmsis_hal/pmsis_hal.h"
 
 #ifdef __GAP9__
 

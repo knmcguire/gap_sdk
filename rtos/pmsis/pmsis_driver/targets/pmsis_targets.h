@@ -28,8 +28,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- *              GAPX PMSIS_HAL File
- *  This file contains only the Hardware Abstraction Layer of GAP8 microprocessor.
+ *              GAPX PMSIS_HAL File (VEGA)
+ *  This file contains only the Hardware Abstraction Layer of GAPX microprocessor.
  *  Aims is to unify the low level SW of chips (PULP and CMSIS), and to give programs
  *  a standard access to the hardware resources.
  *
@@ -45,6 +45,8 @@
 
 #if defined(__GAP8__)
 #define TARGET_CHIP     GAP8
+#elif defined(__GAP9__)
+#define TARGET_CHIP     GAP9
 #endif
 
 #define  __CHIP_INC(x)  #x
@@ -130,6 +132,11 @@ static inline uint32_t pi_is_fc()
 static inline uint32_t pi_nb_cluster_cores()
 {
     return (uint32_t) ARCHI_CLUSTER_NB_PE;
+}
+
+static inline int pi_cl_cluster_nb_cores()
+{
+    return (int) ARCHI_CLUSTER_NB_PE;
 }
 
 /*******************************************************************************

@@ -33,7 +33,7 @@
 #include "pmsis/rtos/event_kernel/event_kernel.h"
 #include "pmsis/rtos/os_frontend_api/pmsis_task.h"
 #include "pmsis_driver/pmsis_fc_event.h"
-#include "pmsis_hal/udma/udma_uart.h"
+#include "pmsis_hal/pmsis_hal.h"
 
 #define PRINTF(...)
 
@@ -121,7 +121,7 @@ void pi_uart_conf_init(struct pi_uart_conf *conf)
     conf->parity_mode  = UART_PARITY_DISABLED;
 
     conf->stop_bit_count = UART_ONE_STOP_BIT;
-    conf->src_clock_Hz = SystemCoreClock;
+    conf->src_clock_Hz = system_core_clock_get();
 
     conf->enable_tx = 0;
     conf->enable_rx = 0;

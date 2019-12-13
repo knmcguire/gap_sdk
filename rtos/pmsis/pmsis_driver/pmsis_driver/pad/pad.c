@@ -30,7 +30,7 @@
 
 #include "pmsis/drivers/pad.h"
 #include "pmsis.h"
-#include "pmsis_hal/soc_ctrl/soc_ctrl_pad.h"
+#include "pmsis_hal/pmsis_hal.h"
 
 /*******************************************************************************
  * Definitions
@@ -49,7 +49,9 @@ void pi_pad_print()
     DEBUG_PRINTF("\nPadfun :\n");
     for (uint32_t i=0; i<(uint32_t) ARCHI_PAD_NB_PADFUNC_REG; i+=4)
     {
-        DEBUG_PRINTF("%x %x %x %x\n", soc_ctrl_safe_padfun_get(i));
+        DEBUG_PRINTF("%x %x %x %x\n",
+                     soc_ctrl_safe_padfun_get(i + 0), soc_ctrl_safe_padfun_get(i + 1),
+                     soc_ctrl_safe_padfun_get(i + 2), soc_ctrl_safe_padfun_get(i + 3));
     }
     DEBUG_PRINTF("Padcfg :\n");
     for (uint32_t i=0; i<(uint32_t) ARCHI_PAD_NB_PADCFG_REG; i+=4)
@@ -78,4 +80,9 @@ void pi_pad_init(uint32_t pad_values[])
     #ifdef DEBUG
     pi_pad_print();
     #endif
+}
+
+void pi_pad_set_configuration(pi_pad_e pad, pi_pad_flags_e cfg)
+{
+    hal_padcfg_set_configuration(pad, (cfg >> PI_PAD_PULL_OFFSET), (cfg >> PI_PAD_DRIVE_OFFSET));
 }
